@@ -74,6 +74,13 @@ footer { text-align:center; color:var(--muted); font-size:12px; padding:10px; }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 }
 </style>
+  
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#171411">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Góc Nghe Truyện">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 </head>
 <body>
 <main>
@@ -443,5 +450,17 @@ footer { text-align:center; color:var(--muted); font-size:12px; padding:10px; }
   });
 })();
 </script>
+  
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .catch((error) => {
+        console.error("Không đăng ký được service worker:", error);
+      });
+  });
+}
+</script>
+
 </body>
 </html>
