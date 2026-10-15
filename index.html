@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truyện Audio của tôi</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f0e8;
+  color: #30251f;
+  margin: 0;
+  padding: 20px;
+}
+main {
+  max-width: 700px;
+  margin: auto;
+  background: white;
+  padding: 22px;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px #0001;
+}
+h1 { text-align: center; color: #9a5037; }
+p { line-height: 1.5; }
+textarea {
+  width: 100%;
+  height: 260px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #c9b9aa;
+  border-radius: 10px;
+  font-size: 16px;
+}
+button, select, input {
+  font-size: 16px;
+  padding: 11px;
+  margin: 5px 2px;
+  border-radius: 9px;
+}
+button {
+  border: 0;
+  background: #9a5037;
+  color: white;
+}
+label { display: block; margin-top: 14px; }
+#status { color: #79513f; }
+</style>
+</head>
+<body>
+<main>
+  <h1>📖 Truyện Audio</h1>
+  <p>Dán truyện vào ô bên dưới rồi chọn giọng đọc.</p>
+  <textarea id="story" placeholder="Dán nội dung truyện của bạn vào đây..."></textarea>
+  <label>Giọng đọc:</label>
+  <select id="voice">
+    <option value="">Giọng tiếng Việt mặc định</option>
+  </select>
+  <label>Tốc độ đọc:</label>
+  <input id="speed" type="range" min="0.7" max="1.3"
+    step="0.1" value="1">
+  <span id="speedText">1.0x</span>
+  <p>
+    <button onclick="playStory()">▶ Đọc truyện</button>
+    <button onclick="pauseStory()">⏸ Tạm dừng</button>
+    <button onclick="resumeStory()">▶ Đọc tiếp</button>
+    <button onclick="stopStory()">⏹ Dừng</button>
+  </p>
+  <p id="status">Sẵn sàng đọc truyện.</p>
+  <p><small>Truyện được xử lý ngay trong trình duyệt; website này không gửi nội dung truyện đến máy chủ riêng.</small></p>
+</main>
+<script>
+const story = document.getElementById("story");
+const voiceSelect = document.getElementById("voice");
+const statusText = document.getElementById("status");
+const speed = document.getElementById("speed");
+let chunks = [];
+let current = 0;
+let running = false;
+speed.oninput = () => {
+  document.getElementById("speedText").textContent =
+    speed.value + "x";
+};
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  voiceSelect.innerHTML = '<option value="">Giọng mặc định</option>';
+  voices.forEach((v, i) => {
+    if (v.lang.toLowerCase().startsWith("vi")) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = v.name + " - " + v.lang;
+      voiceSelect.appendChild(option);
+    }
+  });
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+function playStory() {
+  stopStory();
+  const text = story.value.trim();
+  if (!text) {
+    statusText.textContent = "Ông hãy dán truyện vào trước nhé!";
+    return;
+  }
+  // Chia truyện thành đoạn nhỏ để đọc ổn định hơn
+  chunks = text.match(/[^.!?。！？\n]+[.!?。！？\n]*/g) || [text];
+  current = 0;
+  running = true;
+  readNext();
+}
+function readNext() {
+  if (!running || current >= chunks.length) {
+    if (current >= chunks.length) {
+      statusText.textContent = "Đã đọc xong truyện.";
+      running = false;
+    }
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(chunks[current]);
+  utterance.lang = "vi-VN";
+  utterance.rate = Number(speed.value);
+  const voices = speechSynthesis.getVoices();
+  if (voiceSelect.value !== "") {
+    utterance.voice = voices[Number(voiceSelect.value)];
+  } else {
+    const vi = voices.find(v => v.lang.toLowerCase().startsWith("vi"));
+    if (vi) utterance.voice = vi;
+  }
+  utterance.onend = () => {
+    current++;
+    readNext();
+  };
+  utterance.onerror = () => {
+    statusText.textContent = "Không đọc được đoạn này. Thử lại nhé.";
+  };
+  statusText.textContent =
+    "Đang đọc đoạn " + (current + 1) + " / " + chunks.length;
+  speechSynthesis.speak(utterance);
+}
+function pauseStory() {
+  speechSynthesis.pause();
+  statusText.textContent = "Đã tạm dừng.";
+}
+function resumeStory() {
+  speechSynthesis.resume();
+  statusText.textContent = "Đang tiếp tục đọc.";
+}
+function stopStory() {
+  running = false;
+  speechSynthesis.cancel();
+  current = 0;
+}
+</script>
+</body>
+</html>
