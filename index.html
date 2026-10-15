@@ -1,466 +1,299 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#171512">
-<title>Góc Nghe Truyện</title>
-<style>
-:root {
-  color-scheme: dark;
-  --bg:#171512;
-  --panel:#242019;
-  --panel2:#30291f;
-  --text:#f8efe2;
-  --muted:#b9aa97;
-  --gold:#edc58c;
-  --line:#494033;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0; background:var(--bg); color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  line-height:1.55;
-}
-main { max-width:720px; margin:auto; padding:24px 16px 48px; }
-header { text-align:center; padding:24px 0 28px; }
-.logo { font-size:38px; }
-h1 { margin:8px 0 4px; font-size:29px; letter-spacing:.3px; }
-.subtitle { color:var(--muted); font-size:14px; }
-.card {
-  background:var(--panel); border:1px solid var(--line);
-  border-radius:20px; padding:18px; margin-bottom:16px;
-}
-h2 { font-size:17px; margin:0 0 14px; }
-label { display:block; font-size:14px; margin:12px 0 7px; }
-textarea, select, input[type="text"] {
-  width:100%; border:1px solid var(--line); border-radius:12px;
-  background:#191713; color:var(--text); padding:13px;
-  font:inherit; font-size:16px;
-}
-textarea { min-height:230px; resize:vertical; line-height:1.7; }
-select { min-height:46px; }
-button {
-  border:1px solid var(--line); border-radius:13px;
-  background:var(--panel2); color:var(--text);
-  padding:12px 15px; font-size:15px; font-weight:600;
-  cursor:pointer; min-height:44px;
-}
-button:active { opacity:.75; }
-button.primary {
-  background:var(--gold); color:#241a10; border-color:var(--gold);
-}
-button:disabled { opacity:.4; }
-.actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:14px; }
-.actions button { flex:1; }
-.row { display:flex; align-items:center; gap:12px; }
-.row > * { min-width:0; }
-.row .grow { flex:1; }
-.value { color:var(--gold); font-weight:700; }
-input[type="range"] { width:100%; accent-color:var(--gold); }
-.small { font-size:13px; color:var(--muted); }
-.status { color:var(--gold); min-height:24px; margin-top:12px; }
-.progress {
-  height:5px; background:#40372b; border-radius:9px;
-  overflow:hidden; margin-top:12px;
-}
-.progress > div {
-  height:100%; width:0; background:var(--gold); transition:width .2s;
-}
-.timer { font-size:25px; font-weight:700; color:var(--gold); }
-footer { text-align:center; color:var(--muted); font-size:12px; padding:10px; }
-@media(min-width:560px) {
-  .two { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-}
-</style>
-  
-<link rel="manifest" href="./manifest.json">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#171411">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Góc Nghe Truyện">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+<link rel="manifest" href="./manifest.json">
+<title>Góc Nghe Truyện</title>
+<style>
+:root{color-scheme:dark;--bg:#171512;--panel:#242019;--panel2:#30291f;--text:#f8efe2;--muted:#b9aa97;--gold:#edc58c;--line:#494033}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}
+main{max-width:720px;margin:auto;padding:20px 15px 40px}
+header{text-align:center;padding:20px 0 25px}
+.logo{font-size:36px}h1{margin:5px 0;font-size:28px}
+.sub,.small{color:var(--muted);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 12px}
+label{display:block;font-size:14px;margin:12px 0 6px}
+textarea,select,input[type=text]{width:100%;border:1px solid var(--line);border-radius:11px;background:#191713;color:var(--text);padding:12px;font:inherit;font-size:16px}
+textarea{min-height:190px;line-height:1.65}
+button{border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);padding:11px 12px;font-size:14px;font-weight:600;min-height:43px}
+button.primary{background:var(--gold);color:#241a10;border-color:var(--gold)}
+button.danger{color:#ffd6c8;border-color:#765044}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.actions button{flex:1}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1}.value,.timer{color:var(--gold);font-weight:700}
+.timer{font-size:23px}
+.progress{height:5px;background:#40372b;border-radius:8px;overflow:hidden;margin-top:12px}
+.progress div{height:100%;width:0;background:var(--gold)}
+.status{color:var(--gold);min-height:22px;margin-top:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
+</style>
 </head>
 <body>
 <main>
-<header>
-  <div class="logo">☾</div>
-  <h1>Góc Nghe Truyện</h1>
-  <div class="subtitle">Một góc nhỏ bình yên dành riêng cho ông</div>
-</header>
+<header><div class="logo">☾</div><h1>Góc Nghe Truyện</h1><div class="sub">Một góc nhỏ bình yên dành riêng cho ông</div></header>
 
 <section class="card">
-  <h2>📖 Truyện của ông</h2>
-  <textarea id="story" placeholder="Dán truyện vào đây..."></textarea>
-  <div class="row" style="margin-top:10px">
-    <span class="small grow" id="wordCount">0 ký tự</span>
-    <button id="clearBtn">Xóa truyện</button>
-  </div>
-  <div class="small">Truyện tự lưu trên trình duyệt khi ông nhập nội dung.</div>
+<h2>📚 Thư viện truyện</h2>
+<label for="books">Chọn bộ truyện</label><select id="books"></select>
+<div class="actions">
+<button class="primary" id="addBook">＋ Bộ truyện mới</button>
+<button id="renameBook">Đổi tên bộ</button>
+<button class="danger" id="delBook">Xóa bộ</button>
+</div>
+<p class="small">Nội dung lưu trong trình duyệt trên iPhone này.</p>
 </section>
 
 <section class="card">
-  <h2>🎙️ Giọng đọc</h2>
-  <label for="voice">Chọn giọng</label>
-  <select id="voice">
-    <option value="">Đang tìm giọng đọc...</option>
-  </select>
-  <div class="two">
-    <div>
-      <label for="speed">Tốc độ đọc <span class="value" id="speedValue">1.0×</span></label>
-      <input id="speed" type="range" min="0.6" max="2" step="0.1" value="1">
-      <div class="row small"><span>Chậm</span><span class="grow"></span><span>Nhanh</span></div>
-      <div class="actions">
-        <button id="slower">− Chậm</button>
-        <button id="faster">+ Nhanh</button>
-      </div>
-    </div>
-    <div>
-      <label for="timerSelect">🌙 Hẹn giờ ngủ</label>
-      <select id="timerSelect">
-        <option value="0">Không hẹn giờ</option>
-        <option value="15">15 phút</option>
-        <option value="30">30 phút</option>
-        <option value="45">45 phút</option>
-        <option value="60">60 phút</option>
-        <option value="90">90 phút</option>
-      </select>
-      <div class="timer" id="timerDisplay">Tắt</div>
-      <div class="small">Hết giờ sẽ dừng đọc tự động.</div>
-    </div>
-  </div>
+<h2>📖 Chương truyện</h2>
+<label for="chapters">Chọn chương</label><select id="chapters"></select>
+<div class="actions">
+<button class="primary" id="addChapter">＋ Thêm chương</button>
+<button id="renameChapter">Đổi tên chương</button>
+<button class="danger" id="delChapter">Xóa chương</button>
+</div>
+<label for="title">Tên chương</label>
+<input id="title" type="text" placeholder="Ví dụ: Chương 1">
+<label for="story">Nội dung chương</label>
+<textarea id="story" placeholder="Dán nội dung truyện vào đây..."></textarea>
+<div class="row"><span id="count" class="small grow">0 ký tự</span><button id="save">Lưu chương</button></div>
 </section>
 
 <section class="card">
-  <h2>▶️ Điều khiển nghe truyện</h2>
-  <div class="actions">
-    <button class="primary" id="playBtn">▶ Đọc truyện</button>
-    <button id="pauseBtn">Ⅱ Tạm dừng</button>
-    <button id="resumeBtn">▶ Tiếp tục</button>
-    <button id="stopBtn">■ Dừng</button>
-  </div>
-  <div class="progress"><div id="progressBar"></div></div>
-  <div class="row small" style="margin-top:8px">
-    <span id="progressText">Sẵn sàng</span>
-    <span class="grow"></span>
-    <span id="chunkText"></span>
-  </div>
-  <div class="status" id="status" role="status">Ông chọn truyện rồi nhấn Đọc truyện nhé.</div>
+<h2>🎙️ Giọng đọc</h2>
+<label for="voice">Chọn giọng</label>
+<select id="voice"><option value="">Tự chọn giọng mặc định</option></select>
+<div class="two">
+<div>
+<label>Tốc độ <span class="value" id="speedVal">1.0×</span></label>
+<input id="speed" type="range" min="0.6" max="2" step="0.1" value="1">
+<div class="actions"><button id="slower">− Chậm</button><button id="faster">+ Nhanh</button></div>
+</div>
+<div>
+<label for="timer">🌙 Hẹn giờ ngủ</label>
+<select id="timer">
+<option value="0">Không hẹn giờ</option><option value="15">15 phút</option>
+<option value="30">30 phút</option><option value="45">45 phút</option>
+<option value="60">60 phút</option><option value="90">90 phút</option>
+</select>
+<div class="timer" id="timerVal">Tắt</div>
+</div>
+</div>
 </section>
 
 <section class="card">
-  <h2>🔒 Riêng tư</h2>
-  <div class="small">
-    Nội dung truyện được lưu trong bộ nhớ cục bộ của trình duyệt.
-    Không nhập truyện vào mã nguồn GitHub. Người có quyền dùng thiết bị
-    hoặc trình duyệt này vẫn có thể đọc nội dung đã lưu.
-    Nếu xóa dữ liệu website, truyện có thể bị mất.
-  </div>
-  <div class="actions">
-    <button id="forgetBtn">Xóa truyện đã lưu trên máy</button>
-  </div>
+<h2>▶️ Điều khiển nghe</h2>
+<div class="actions">
+<button class="primary" id="play">▶ Đọc chương</button>
+<button id="pause">Ⅱ Tạm dừng</button>
+<button id="resume">▶ Tiếp tục</button>
+<button id="stop">■ Dừng</button>
+</div>
+<div class="progress"><div id="bar"></div></div>
+<div class="row small"><span id="prog">Sẵn sàng</span><span class="grow"></span><span id="pct"></span></div>
+<div class="status" id="status">Tạo bộ truyện rồi thêm chương nhé.</div>
 </section>
-<footer>Góc Nghe Truyện · Chúc ông nghe truyện thật thư giãn ☾</footer>
+
+<section class="card">
+<h2>🔒 Sao lưu</h2>
+<p class="small">Truyện lưu trên trình duyệt này. Nếu xóa dữ liệu website, truyện có thể mất. Hãy xuất bản sao định kỳ.</p>
+<div class="actions">
+<button id="export">Xuất bản sao</button><button id="import">Nhập bản sao</button>
+<input id="file" type="file" accept="application/json,.json" hidden>
+</div>
+</section>
+<footer>Góc Nghe Truyện ☾</footer>
 </main>
 
 <script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const story = $("story");
-  const voiceSelect = $("voice");
-  const speed = $("speed");
-  const status = $("status");
-  const timerSelect = $("timerSelect");
-  const timerDisplay = $("timerDisplay");
+(()=>{
+const $=id=>document.getElementById(id);
+const KEY='goc_nghe_truyen_library_v1';
+const OLD='goc_nghe_truyen_story_v2';
+const SK='goc_nghe_truyen_speed_v2',VK='goc_nghe_truyen_voice_v2';
+let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,deadline=0,tick=null;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const book=()=>lib.find(x=>x.id===bid);
+const chapter=()=>book()?.chapters.find(x=>x.id===cid);
+const msg=t=>$('status').textContent=t;
 
-  let voices = [];
-  let chunks = [];
-  let current = 0;
-  let playing = false;
-  let paused = false;
-  let session = 0;
-  let sleepDeadline = 0;
-  let timerInterval = null;
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib))}catch(e){msg('Không lưu được; bộ nhớ có thể đầy.')}}
+function save(){let c=chapter();if(c){c.title=$('title').value.trim()||c.title||'Chương';c.text=$('story').value;c.pos=pos;persist()}}
+function makeChunks(t){
+let a=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];
+for(let s of a){s=s.trim();while(s.length>220){let n=s.lastIndexOf(' ',220);if(n<80)n=220;out.push(s.slice(0,n).trim());s=s.slice(n).trim()}if(s)out.push(s)}
+return out
+}
+function progress(){
+let n=chunks.length;
+$('bar').style.width=(n?pos/n*100:0)+'%';
+$('prog').textContent=n?Math.min(pos+1,n)+' / '+n+' đoạn':'Sẵn sàng';
+$('pct').textContent=n?Math.round(pos/n*100)+'%':''
+}
+function render(){
+let s=$('books');s.replaceChildren();
+if(!lib.length)s.add(new Option('Chưa có bộ truyện',''));
+lib.forEach(b=>s.add(new Option(b.title,b.id)));s.value=bid;
+let cs=$('chapters');cs.replaceChildren();
+if(!book()||!book().chapters.length)cs.add(new Option('Chưa có chương',''));
+book()?.chapters.forEach(c=>cs.add(new Option(c.title,c.id)));
+cs.value=cid;
+let c=chapter();$('title').value=c?.title||'';$('story').value=c?.text||'';
+pos=c?.pos||0;chunks=makeChunks($('story').value);count();progress()
+}
+function count(){$('count').textContent=$('story').value.length.toLocaleString('vi-VN')+' ký tự'}
+function stop(t='Đã dừng đọc.'){session++;playing=false;paused=false;speechSynthesis.cancel();msg(t)}
+function newBook(){
+let n=prompt('Tên bộ truyện mới:');if(!n?.trim())return;save();
+let b={id:uid(),title:n.trim(),chapters:[],last:''};
+lib.push(b);bid=b.id;cid='';persist();render();msg('Đã tạo bộ truyện. Nhấn Thêm chương.')
+}
+function newChapter(){
+let b=book();if(!b){msg('Tạo bộ truyện trước nhé.');return}save();
+let n=prompt('Tên chương mới:','Chương '+(b.chapters.length+1));if(!n?.trim())return;
+let c={id:uid(),title:n.trim(),text:'',pos:0};
+b.chapters.push(c);b.last=c.id;cid=c.id;pos=0;persist();render();msg('Đã thêm chương. Dán nội dung vào ô.')
+}
+function loadVoices(){
+if(!('speechSynthesis'in window))return;
+voices=speechSynthesis.getVoices();let old=localStorage.getItem(VK)||'',s=$('voice');
+s.replaceChildren(new Option('Tự chọn giọng mặc định',''));
+let vi=voices.filter(v=>v.lang.toLowerCase().startsWith('vi'));
+let other=voices.filter(v=>!v.lang.toLowerCase().startsWith('vi'));
+[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+v.lang+')',v.voiceURI)));
+s.value=old;if(!vi.length)msg('Chưa tìm thấy giọng tiếng Việt trên máy.')
+}
+function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>v.lang.toLowerCase().startsWith('vi'))||null}
+function speak(id){
+if(id!==session||!playing||paused)return;
+if(pos>=chunks.length){
+playing=false;let c=chapter();if(c){c.pos=chunks.length;persist()}
+progress();msg('Đã đọc hết chương.');return
+}
+let u=new SpeechSynthesisUtterance(chunks[pos]),v=chosen();
+u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=+$('speed').value;
+u.onend=()=>{if(id!==session||!playing)return;pos++;let c=chapter();if(c){c.pos=pos;persist()}progress();speak(id)};
+u.onerror=e=>{if(id===session&&e.error!=='canceled'&&e.error!=='interrupted'){playing=false;msg('Giọng đọc gặp lỗi. Thử chọn giọng khác nhé.')}};
+speechSynthesis.speak(u);msg('Đang đọc: '+(chapter()?.title||'chương truyện'));progress()
+}
 
-  const storyKey = "goc_nghe_truyen_story_v2";
-  const speedKey = "goc_nghe_truyen_speed_v2";
-  const voiceKey = "goc_nghe_truyen_voice_v2";
+$('addBook').onclick=newBook;
+$('addChapter').onclick=newChapter;
+$('books').onchange=()=>{
+save();stop('Đã chuyển bộ truyện.');bid=$('books').value;
+cid=book()?.last||book()?.chapters[0]?.id||'';render()
+};
+$('chapters').onchange=()=>{
+save();stop('Đã chuyển chương.');cid=$('chapters').value;
+if(book())book().last=cid;render();persist()
+};
+$('renameBook').onclick=()=>{
+let b=book();if(!b)return;let n=prompt('Tên bộ truyện:',b.title);
+if(n?.trim()){b.title=n.trim();persist();render()}
+};
+$('delBook').onclick=()=>{
+let b=book();if(!b||!confirm('Xóa bộ truyện và tất cả chương?'))return;
+stop();lib=lib.filter(x=>x.id!==bid);bid=lib[0]?.id||'';
+cid=book()?.chapters[0]?.id||'';persist();render()
+};
+$('renameChapter').onclick=()=>{
+let c=chapter();if(!c)return;let n=prompt('Tên chương:',c.title);
+if(n?.trim()){c.title=n.trim();persist();render()}
+};
+$('delChapter').onclick=()=>{
+let b=book(),c=chapter();if(!b||!c||!confirm('Xóa chương này?'))return;
+stop();b.chapters=b.chapters.filter(x=>x.id!==cid);cid=b.chapters[0]?.id||'';
+b.last=cid;persist();render()
+};
+$('save').onclick=()=>{
+if(!chapter()){msg('Tạo bộ truyện và chương trước nhé.');return}
+save();render();msg('Đã lưu chương.')
+};
+$('story').oninput=()=>{count();if(chapter()){chapter().text=$('story').value;persist()}};
+$('title').oninput=()=>{
+if(chapter()){chapter().title=$('title').value.trim()||'Chương';persist();
+let o=[...$('chapters').options].find(x=>x.value===cid);if(o)o.textContent=chapter().title}
+};
 
-  function sayStatus(text) { status.textContent = text; }
+$('speed').value=localStorage.getItem(SK)||'1';
+function speedText(){$('speedVal').textContent=(+$('speed').value).toFixed(1)+'×'}
+speedText();
+$('speed').oninput=()=>{speedText();localStorage.setItem(SK,$('speed').value)};
+$('slower').onclick=()=>{$('speed').value=Math.max(.6,+$('speed').value-.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
+$('faster').onclick=()=>{$('speed').value=Math.min(2,+$('speed').value+.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
+$('voice').onchange=()=>localStorage.setItem(VK,$('voice').value);
+if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 
-  function loadVoices() {
-    if (!("speechSynthesis" in window)) {
-      voiceSelect.innerHTML = '<option>Trình duyệt không hỗ trợ đọc giọng nói</option>';
-      sayStatus("Ông hãy mở website bằng Safari trên iPhone.");
-      return;
-    }
-    voices = speechSynthesis.getVoices();
-    const old = localStorage.getItem(voiceKey) || "";
-    voiceSelect.replaceChildren();
-    const auto = document.createElement("option");
-    auto.value = "";
-    auto.textContent = "Tự chọn giọng mặc định";
-    voiceSelect.append(auto);
+$('play').onclick=()=>{
+let c=chapter();if(!c){msg('Tạo bộ truyện và chương trước nhé.');return}
+save();if(!$('story').value.trim()){msg('Dán nội dung chương trước nhé.');return}
+stop('Đang chuẩn bị…');chunks=makeChunks($('story').value);
+pos=Math.min(c.pos||0,Math.max(0,chunks.length-1));playing=true;let id=session;progress();speak(id)
+};
+$('pause').onclick=()=>{
+if(playing&&!paused){paused=true;speechSynthesis.pause();
+if(chapter()){chapter().pos=pos;persist()}msg('Đã tạm dừng; tiến độ đã lưu.')}
+};
+$('resume').onclick=()=>{if(playing&&paused){paused=false;speechSynthesis.resume();msg('Đang tiếp tục…')}};
+$('stop').onclick=()=>{if(chapter()){chapter().pos=pos;persist()}stop('Đã dừng. Tiến độ đã lưu.')};
 
-    const vi = voices.filter(v => v.lang.toLowerCase().startsWith("vi"));
-    const rest = voices.filter(v => !v.lang.toLowerCase().startsWith("vi"));
-    [...vi, ...rest].forEach(v => {
-      const opt = document.createElement("option");
-      opt.value = v.voiceURI;
-      opt.textContent = v.name + " (" + v.lang + ")" +
-        (v.lang.toLowerCase().startsWith("vi") ? " · Tiếng Việt" : "");
-      voiceSelect.append(opt);
-    });
-    if ([...voiceSelect.options].some(o => o.value === old)) {
-      voiceSelect.value = old;
-    }
-    if (!vi.length) {
-      sayStatus("Chưa tìm thấy giọng tiếng Việt. Thử mở phần cài đặt giọng nói của iPhone.");
-    }
-  }
+function timerUpdate(){
+if(!deadline){$('timerVal').textContent='Tắt';return}
+let left=Math.max(0,deadline-Date.now());
+$('timerVal').textContent=String(Math.floor(left/60000)).padStart(2,'0')+':'+String(Math.floor(left%60000/1000)).padStart(2,'0');
+if(!left){deadline=0;clearInterval(tick);tick=null;$('timer').value='0';stop('🌙 Hết giờ ngủ. Chúc ông ngủ ngon!');$('timerVal').textContent='Đã hết giờ'}
+}
+$('timer').onchange=()=>{
+clearInterval(tick);tick=null;let n=+$('timer').value;deadline=n?Date.now()+n*60000:0;
+if(deadline){tick=setInterval(timerUpdate,1000);timerUpdate();msg('Đã đặt hẹn giờ '+n+' phút.')}
+else $('timerVal').textContent='Tắt'
+};
 
-  if ("speechSynthesis" in window) {
-    loadVoices();
-    speechSynthesis.onvoiceschanged = loadVoices;
-  }
+$('export').onclick=()=>{
+save();let blob=new Blob([JSON.stringify({library:lib},null,2)],{type:'application/json'});
+let url=URL.createObjectURL(blob),a=document.createElement('a');
+a.href=url;a.download='goc-nghe-truyen-sao-luu.json';a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);msg('Đã tạo bản sao thư viện.')
+};
+$('import').onclick=()=>$('file').click();
+$('file').onchange=async e=>{
+let f=e.target.files[0];if(!f)return;
+try{
+let d=JSON.parse(await f.text()),arr=Array.isArray(d)?d:d.library;
+if(!Array.isArray(arr))throw 0;
+if(!confirm('Bản sao sẽ thay thư viện hiện tại. Tiếp tục?'))return;
+lib=arr;bid=lib[0]?.id||'';cid=book()?.last||book()?.chapters[0]?.id||'';
+persist();render();msg('Đã nhập bản sao.')
+}catch(err){msg('Không đọc được file sao lưu.')}finally{e.target.value=''}
+};
 
-  try {
-    story.value = localStorage.getItem(storyKey) || "";
-    speed.value = localStorage.getItem(speedKey) || "1";
-    voiceSelect.value = localStorage.getItem(voiceKey) || "";
-  } catch (_) {}
-
-  function updateCount() {
-    $("wordCount").textContent = story.value.length.toLocaleString("vi-VN") + " ký tự";
-  }
-  function updateSpeed() {
-    $("speedValue").textContent = Number(speed.value).toFixed(1) + "×";
-  }
-  updateCount();
-  updateSpeed();
-
-  story.addEventListener("input", () => {
-    updateCount();
-    try { localStorage.setItem(storyKey, story.value); }
-    catch (_) { sayStatus("Bộ nhớ trình duyệt đầy hoặc không khả dụng."); }
-  });
-
-  speed.addEventListener("input", () => {
-    updateSpeed();
-    try { localStorage.setItem(speedKey, speed.value); } catch (_) {}
-  });
-
-  voiceSelect.addEventListener("change", () => {
-    try { localStorage.setItem(voiceKey, voiceSelect.value); } catch (_) {}
-  });
-
-  $("slower").onclick = () => {
-    speed.value = Math.max(0.6, Number(speed.value) - 0.1).toFixed(1);
-    updateSpeed();
-    try { localStorage.setItem(speedKey, speed.value); } catch (_) {}
-  };
-  $("faster").onclick = () => {
-    speed.value = Math.min(2, Number(speed.value) + 0.1).toFixed(1);
-    updateSpeed();
-    try { localStorage.setItem(speedKey, speed.value); } catch (_) {}
-  };
-
-  function makeChunks(text) {
-    // Tách theo câu và giới hạn độ dài để hỗ trợ đọc văn bản dài.
-    const sentences = text.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g) || [text];
-    const out = [];
-    for (let sentence of sentences) {
-      sentence = sentence.trim();
-      if (!sentence) continue;
-      while (sentence.length > 220) {
-        let cut = sentence.lastIndexOf(" ", 220);
-        if (cut < 80) cut = 220;
-        out.push(sentence.slice(0, cut).trim());
-        sentence = sentence.slice(cut).trim();
-      }
-      if (sentence) out.push(sentence);
-    }
-    return out;
-  }
-
-  function updateProgress() {
-    const total = chunks.length;
-    $("progressBar").style.width =
-      (total ? (current / total * 100) : 0) + "%";
-    $("progressText").textContent = total
-      ? Math.min(current + 1, total) + " / " + total + " đoạn"
-      : "Sẵn sàng";
-    $("chunkText").textContent = total ? Math.round(current / total * 100) + "%" : "";
-  }
-
-  function chosenVoice() {
-    return voices.find(v => v.voiceURI === voiceSelect.value) ||
-      voices.find(v => v.lang.toLowerCase().startsWith("vi")) || null;
-  }
-
-  function speakNext(id) {
-    if (id !== session || !playing || paused) return;
-    if (current >= chunks.length) {
-      playing = false;
-      $("progressBar").style.width = "100%";
-      sayStatus("Đã đọc hết truyện. Chúc ông ngủ ngon! 🌙");
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(chunks[current]);
-    const v = chosenVoice();
-    if (v) {
-      utterance.voice = v;
-      utterance.lang = v.lang;
-    } else {
-      utterance.lang = "vi-VN";
-    }
-    utterance.rate = Number(speed.value);
-    utterance.onend = () => {
-      if (id !== session || !playing) return;
-      current++;
-      updateProgress();
-      speakNext(id);
-    };
-    utterance.onerror = event => {
-      if (id !== session) return;
-      if (event.error === "canceled" || event.error === "interrupted") return;
-      playing = false;
-      sayStatus("Giọng đọc gặp lỗi. Ông thử chọn giọng khác nhé.");
-    };
-    speechSynthesis.speak(utterance);
-    sayStatus("Đang đọc truyện…");
-    updateProgress();
-  }
-
-  function stopReading(message = "Đã dừng đọc.") {
-    session++;
-    playing = false;
-    paused = false;
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
-    sayStatus(message);
-  }
-
-  $("playBtn").onclick = () => {
-    if (!story.value.trim()) {
-      sayStatus("Ông dán truyện vào ô phía trên trước nhé.");
-      return;
-    }
-    if (!("speechSynthesis" in window)) {
-      sayStatus("Trình duyệt này không hỗ trợ đọc văn bản.");
-      return;
-    }
-    stopReading("Đang chuẩn bị truyện…");
-    chunks = makeChunks(story.value);
-    current = 0;
-    playing = true;
-    paused = false;
-    const id = session;
-    updateProgress();
-    speakNext(id);
-  };
-
-  $("pauseBtn").onclick = () => {
-    if (playing && !paused) {
-      paused = true;
-      speechSynthesis.pause();
-      sayStatus("Đã tạm dừng.");
-    }
-  };
-
-  $("resumeBtn").onclick = () => {
-    if (!playing || !paused) return;
-    paused = false;
-    speechSynthesis.resume();
-    sayStatus("Đang tiếp tục đọc…");
-    // Trên một số trình duyệt iOS, resume có thể không tiếp tục ổn định.
-    setTimeout(() => {
-      if (playing && !paused && speechSynthesis.speaking) return;
-      if (playing && !paused) {
-        session++;
-        const id = session;
-        speakNext(id);
-      }
-    }, 800);
-  };
-
-  $("stopBtn").onclick = () => stopReading();
-
-  $("clearBtn").onclick = () => {
-    if (!confirm("Ông có chắc muốn xóa nội dung truyện trong ô không?")) return;
-    story.value = "";
-    try { localStorage.removeItem(storyKey); } catch (_) {}
-    updateCount();
-    stopReading("Đã xóa nội dung truyện.");
-    chunks = [];
-    current = 0;
-    updateProgress();
-  };
-
-  $("forgetBtn").onclick = () => {
-    if (!confirm("Xóa truyện đã lưu trong trình duyệt trên máy này?")) return;
-    try { localStorage.removeItem(storyKey); } catch (_) {}
-    story.value = "";
-    updateCount();
-    stopReading("Đã xóa truyện lưu trên máy.");
-    chunks = [];
-    current = 0;
-    updateProgress();
-  };
-
-  function updateTimer() {
-    if (!sleepDeadline) {
-      timerDisplay.textContent = "Tắt";
-      return;
-    }
-    const left = Math.max(0, sleepDeadline - Date.now());
-    const mins = Math.floor(left / 60000);
-    const secs = Math.floor((left % 60000) / 1000);
-    timerDisplay.textContent =
-      String(mins).padStart(2, "0") + ":" +
-      String(secs).padStart(2, "0");
-    if (left <= 0) {
-      sleepDeadline = 0;
-      clearInterval(timerInterval);
-      timerInterval = null;
-      timerSelect.value = "0";
-      stopReading("🌙 Đã hết giờ ngủ. Chúc ông ngủ ngon!");
-      timerDisplay.textContent = "Đã hết giờ";
-    }
-  }
-
-  timerSelect.addEventListener("change", () => {
-    const minutes = Number(timerSelect.value);
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = null;
-    sleepDeadline = minutes ? Date.now() + minutes * 60000 : 0;
-    if (sleepDeadline) {
-      timerInterval = setInterval(updateTimer, 1000);
-      sayStatus("Đã đặt hẹn giờ ngủ " + minutes + " phút.");
-      updateTimer();
-    } else {
-      timerDisplay.textContent = "Tắt";
-      sayStatus("Đã tắt hẹn giờ ngủ.");
-    }
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateTimer();
-  });
+try{
+lib=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(lib))lib=[];
+if(!lib.length){
+let old=localStorage.getItem(OLD)||'';
+if(old.trim()){
+let c={id:uid(),title:'Chương 1',text:old,pos:0};
+let b={id:uid(),title:'Truyện đã lưu trước đây',chapters:[c],last:c.id};lib=[b]
+}
+}
+bid=lib[0]?.id||'';cid=book()?.last||book()?.chapters[0]?.id||''
+}catch(e){lib=[]}
+render();
 })();
 </script>
-  
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
-      .catch((error) => {
-        console.error("Không đăng ký được service worker:", error);
-      });
-  });
+if('serviceWorker'in navigator){
+window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.error(e)))
 }
 </script>
-
 </body>
 </html>
