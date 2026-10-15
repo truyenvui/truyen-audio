@@ -1,0 +1,13 @@
+
+{
+  "id": "./",
+  "name": "Góc Nghe Truyện",
+  "short_name": "Nghe Truyện",
+  "description": "Góc riêng để nghe những câu chuyện yêu thích",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#171411",
+  "theme_color": "#171411",
+  "lang": "vi"
+}
