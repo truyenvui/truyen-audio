@@ -72,6 +72,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <h2>🎙️ Giọng đọc</h2>
 <label for="voice">Chọn giọng</label>
 <select id="voice"><option value="">Tự chọn giọng mặc định</option></select>
+<div class="actions"><button id="refreshVoices" type="button">↻ Làm mới danh sách giọng</button><button id="testVoice" type="button">▶ Nghe thử giọng</button></div>
+<p class="small">Danh sách phụ thuộc vào những giọng Safari cung cấp cho trang web. Một số giọng tải trong Cài đặt iPhone có thể không xuất hiện ở đây.</p>
 <div class="two">
 <div>
 <label>Tốc độ <span class="value" id="speedVal">1.0×</span></label>
@@ -163,16 +165,32 @@ let n=prompt('Tên chương mới:','Chương '+(b.chapters.length+1));if(!n?.tr
 let c={id:uid(),title:n.trim(),text:'',pos:0};
 b.chapters.push(c);b.last=c.id;cid=c.id;pos=0;persist();render();msg('Đã thêm chương. Dán nội dung vào ô.')
 }
-function loadVoices(){
+function loadVoices(attempt=0){
 if(!('speechSynthesis'in window))return;
-voices=speechSynthesis.getVoices();let old=localStorage.getItem(VK)||'',s=$('voice');
-s.replaceChildren(new Option('Tự chọn giọng mặc định',''));
-let vi=voices.filter(v=>v.lang.toLowerCase().startsWith('vi'));
-let other=voices.filter(v=>!v.lang.toLowerCase().startsWith('vi'));
-[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+v.lang+')',v.voiceURI)));
-s.value=old;if(!vi.length)msg('Chưa tìm thấy giọng tiếng Việt trên máy.')
+let s=$('voice'),old=s.value||localStorage.getItem(VK)||'';
+voices=speechSynthesis.getVoices()||[];
+if(!voices.length&&attempt<4){
+if(attempt===0)msg('Đang chờ Safari tải danh sách giọng đọc…');
+setTimeout(()=>loadVoices(attempt+1),500*(attempt+1));
+return;
 }
-function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>v.lang.toLowerCase().startsWith('vi'))||null}
+s.replaceChildren(new Option('Tự chọn giọng mặc định',''));
+let vi=voices.filter(v=>(v.lang||'').toLowerCase().startsWith('vi'));
+let other=voices.filter(v=>!(v.lang||'').toLowerCase().startsWith('vi'));
+[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+(v.lang||'không rõ ngôn ngữ')+')',v.voiceURI)));
+s.value=old;
+if(old&&s.value!==old){
+localStorage.setItem(VK,'');
+msg('Giọng đã lưu không có trong danh sách Safari hiện cung cấp. Hãy chọn một giọng đang hiển thị.');
+}else if(!vi.length){
+msg(voices.length
+?'Safari chưa cung cấp giọng tiếng Việt cho trang này. Ông có thể chọn giọng khác đang hiển thị.'
+:'Safari chưa trả về danh sách giọng đọc. Thử nút Làm mới danh sách giọng nhé.');
+}else{
+msg('Đã tải '+vi.length+' giọng tiếng Việt từ Safari.');
+}
+}
+function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>(v.lang||'').toLowerCase().startsWith('vi'))||null}
 function speak(id){
 if(id!==session||!playing||paused)return;
 if(pos>=chunks.length){
@@ -231,7 +249,22 @@ $('speed').oninput=()=>{speedText();localStorage.setItem(SK,$('speed').value)};
 $('slower').onclick=()=>{$('speed').value=Math.max(.6,+$('speed').value-.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
 $('faster').onclick=()=>{$('speed').value=Math.min(2,+$('speed').value+.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
 $('voice').onchange=()=>localStorage.setItem(VK,$('voice').value);
-if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+if('speechSynthesis'in window){
+loadVoices();
+speechSynthesis.onvoiceschanged=()=>loadVoices();
+$('refreshVoices').onclick=()=>loadVoices();
+$('testVoice').onclick=()=>{
+if(!('speechSynthesis'in window)){msg('Trình duyệt này chưa hỗ trợ đọc văn bản.');return}
+if(playing){msg('Ông dừng truyện trước rồi hãy thử giọng nhé.');return}
+speechSynthesis.cancel();
+let u=new SpeechSynthesisUtterance('Xin chào, đây là giọng đọc thử của Góc Nghe Truyện.');
+let v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=+$('speed').value;
+u.onstart=()=>msg('Đang thử giọng: '+(v?v.name:'giọng mặc định của Safari')+'.');
+u.onend=()=>msg('Đã nghe thử xong.');
+u.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')msg('Không thử được giọng này. Ông thử chọn giọng khác nhé.')};
+speechSynthesis.speak(u);
+};
+}
 
 $('play').onclick=()=>{
 let c=chapter();if(!c){msg('Tạo bộ truyện và chương trước nhé.');return}
