@@ -311,17 +311,28 @@ $('saveImportedStory').onclick=()=>{
  function escapeHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
  function parseBulkUrls(raw){return [...new Set(raw.split(/\s+/).map(x=>x.trim()).filter(Boolean).map(x=>{try{const u=new URL(x);return /^https?:$/.test(u.protocol)?u.href:''}catch{return ''}}).filter(Boolean))].slice(0,20)}
  function renderBulkResults(){
-  $('bulkResults').innerHTML=bulkState.items.map((x,i)=>'<div style="padding:7px 0;border-bottom:1px solid var(--line)"><b>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+escapeHtml(x.title)+'</b><br><span>'+escapeHtml(x.ok?(x.text.length.toLocaleString('vi-VN')+' ký tự'):x.error)+'</span></div>').join('');
+  $('bulkResults').innerHTML=bulkState.items.map((x,i)=>'<div style="padding:7px 0;border-bottom:1px solid var(--line)"><b>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+escapeHtml(x.title)+'</b><br><span>'+escapeHtml(x.ok?(x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.source||'đã lấy')):x.error)+'</span></div>').join('');
   $('saveBulkChapters').disabled=bulkState.busy||!bulkState.items.some(x=>x.ok);
  }
  async function readBulkUrl(url){
-  const response=await fetch('https://r.jina.ai/'+url,{headers:{'Accept':'text/plain'}});
-  if(!response.ok)throw new Error('Dịch vụ đọc trang trả mã '+response.status);
-  let text=await response.text(),m=text.match(/^Title:\s*(.+)$/mi);
-  let title=m?m[1].trim():(new URL(url).pathname.split('/').filter(Boolean).pop()||'Chương mới').replace(/[-_]+/g,' ');
-  text=text.replace(/^Title:\s*.*\n/im,'').replace(/^URL Source:\s*.*\n/im,'').replace(/^Markdown Content:\s*\n/im,'').trim();
-  if(text.length<100)throw new Error('Nội dung quá ngắn hoặc website chặn trích xuất');
-  return {url,title,text,ok:true};
+  const endpoints=[
+   {label:'Jina Reader',url:'https://r.jina.ai/'+url},
+   {label:'Jina Reader alternate URL',url:'https://r.jina.ai/http://'+url.replace(/^https?:\/\//i,'')}
+  ];
+  let lastError='Không lấy được nội dung';
+  for(const endpoint of endpoints){
+   try{
+    const response=await fetch(endpoint.url,{headers:{'Accept':'text/plain'}});
+    const raw=await response.text();
+    if(!response.ok){lastError=endpoint.label+' trả mã HTTP '+response.status+(raw?' — '+raw.slice(0,140).replace(/\s+/g,' '):'');continue}
+    let text=raw,m=text.match(/^Title:\s*(.+)$/mi);
+    let title=m?m[1].trim():(new URL(url).pathname.split('/').filter(Boolean).pop()||'Chương mới').replace(/[-_]+/g,' ');
+    text=text.replace(/^Title:\s*.*\n/im,'').replace(/^URL Source:\s*.*\n/im,'').replace(/^Markdown Content:\s*\n/im,'').trim();
+    if(text.length<100){lastError=endpoint.label+' chỉ trả '+text.length+' ký tự. Phản hồi đầu: '+raw.slice(0,160).replace(/\s+/g,' ');continue}
+    return {url,title,text,ok:true,source:endpoint.label};
+   }catch(e){lastError=endpoint.label+': '+(e.message||'lỗi mạng hoặc CORS')}
+  }
+  throw new Error(lastError);
  }
  $('discoverChapters').onclick=async()=>{
   let target;try{target=new URL($('bulkStoryUrl').value.trim());if(!/^https?:$/.test(target.protocol))throw 0}catch{bulkStatus('Dán link trang truyện hợp lệ trước nhé.');return}
