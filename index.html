@@ -165,25 +165,32 @@ let n=prompt('Tên chương mới:','Chương '+(b.chapters.length+1));if(!n?.tr
 let c={id:uid(),title:n.trim(),text:'',pos:0};
 b.chapters.push(c);b.last=c.id;cid=c.id;pos=0;persist();render();msg('Đã thêm chương. Dán nội dung vào ô.')
 }
-function loadVoices(){
+function loadVoices(attempt=0){
 if(!('speechSynthesis'in window))return;
 let s=$('voice'),old=s.value||localStorage.getItem(VK)||'';
-voices=speechSynthesis.getVoices();
+voices=speechSynthesis.getVoices()||[];
+if(!voices.length&&attempt<4){
+if(attempt===0)msg('Đang chờ Safari tải danh sách giọng đọc…');
+setTimeout(()=>loadVoices(attempt+1),500*(attempt+1));
+return;
+}
 s.replaceChildren(new Option('Tự chọn giọng mặc định',''));
 let vi=voices.filter(v=>(v.lang||'').toLowerCase().startsWith('vi'));
 let other=voices.filter(v=>!(v.lang||'').toLowerCase().startsWith('vi'));
-[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+v.lang+')',v.voiceURI)));
+[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+(v.lang||'không rõ ngôn ngữ')+')',v.voiceURI)));
 s.value=old;
 if(old&&s.value!==old){
 localStorage.setItem(VK,'');
 msg('Giọng đã lưu không có trong danh sách Safari hiện cung cấp. Hãy chọn một giọng đang hiển thị.');
 }else if(!vi.length){
-msg('Safari hiện chưa cung cấp giọng tiếng Việt cho trang này. Làm mới có thể kiểm tra lại, nhưng không thể thêm giọng mà Safari không cung cấp.');
+msg(voices.length
+?'Safari chưa cung cấp giọng tiếng Việt cho trang này. Ông có thể chọn giọng khác đang hiển thị.'
+:'Safari chưa trả về danh sách giọng đọc. Thử nút Làm mới danh sách giọng nhé.');
 }else{
 msg('Đã tải '+vi.length+' giọng tiếng Việt từ Safari.');
 }
 }
-function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>v.lang.toLowerCase().startsWith('vi'))||null}
+function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>(v.lang||'').toLowerCase().startsWith('vi'))||null}
 function speak(id){
 if(id!==session||!playing||paused)return;
 if(pos>=chunks.length){
