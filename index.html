@@ -54,6 +54,20 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 </section>
 
 <section class="card">
+<h2>🔗 Lấy truyện từ đường link</h2>
+<label for="storyUrl">Link trang truyện</label>
+<input id="storyUrl" type="text" inputmode="url" placeholder="https://...">
+<p class="small">Dán link bài truyện hoặc chương truyện. Công cụ sẽ thử trích xuất nội dung qua dịch vụ đọc trang bên ngoài; một số website chặn truy cập hoặc không hỗ trợ.</p>
+<div class="actions"><button class="primary" id="fetchStoryUrl" type="button">Lấy nội dung</button><button id="saveImportedStory" type="button" disabled>Lưu thành chương mới</button></div>
+<label for="importedTitle">Tên chương lấy được</label>
+<input id="importedTitle" type="text" placeholder="Tên chương">
+<label for="importedText">Xem trước nội dung</label>
+<textarea id="importedText" placeholder="Nội dung lấy từ link sẽ hiện ở đây..." style="min-height:150px"></textarea>
+<p class="small">Ông có thể sửa nội dung trước khi lưu. Dữ liệu chỉ được thêm vào thư viện khi bấm “Lưu thành chương mới”; chương cũ không bị ghi đè.</p>
+<div class="status" id="urlStatus" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card">
 <h2>📖 Chương truyện</h2>
 <label for="chapters">Chọn chương</label><select id="chapters"></select>
 <div class="actions">
@@ -216,6 +230,47 @@ u.onerror=e=>{if(id===session&&e.error!=='canceled'&&e.error!=='interrupted'){pl
 speechSynthesis.speak(u);msg('Đang đọc: '+(chapter()?.title||'chương truyện'));progress()
 }
 
+let importedReady=false;
+function setUrlStatus(t){$('urlStatus').textContent=t}
+$('fetchStoryUrl').onclick=async()=>{
+ const raw=$('storyUrl').value.trim();
+ if(!raw){setUrlStatus('Dán link trang truyện trước nhé.');return}
+ let target;
+ try{target=new URL(raw);if(!['http:','https:'].includes(target.protocol))throw 0}
+ catch(e){setUrlStatus('Link chưa hợp lệ. Hãy nhập link bắt đầu bằng https:// hoặc http://');return}
+ $('fetchStoryUrl').disabled=true;$('saveImportedStory').disabled=true;importedReady=false;
+ setUrlStatus('Đang thử lấy nội dung trang…');
+ try{
+  const readerUrl='https://r.jina.ai/'+target.href;
+  const response=await fetch(readerUrl,{headers:{'Accept':'text/plain'}});
+  if(!response.ok)throw new Error('Dịch vụ đọc trang trả về mã '+response.status);
+  let text=await response.text();
+  if(!text.trim())throw new Error('Trang không có nội dung văn bản đọc được.');
+  let title=target.pathname.split('/').filter(Boolean).pop()||target.hostname;
+  title=decodeURIComponent(title).replace(/[-_]+/g,' ').replace(/\.[a-z0-9]+$/i,'').trim()||target.hostname;
+  const titleMatch=text.match(/^Title:\s*(.+)$/mi);
+  if(titleMatch)title=titleMatch[1].trim();
+  text=text.replace(/^Title:\s*.*\n/im,'').replace(/^URL Source:\s*.*\n/im,'').replace(/^Markdown Content:\s*\n/im,'').trim();
+  if(text.length<80)throw new Error('Trang trả về quá ít nội dung; có thể website chặn trích xuất.');
+  $('importedTitle').value=title;
+  $('importedText').value=text;
+  importedReady=true;$('saveImportedStory').disabled=false;
+  setUrlStatus('Đã lấy được khoảng '+text.length.toLocaleString('vi-VN')+' ký tự. Ông xem lại nội dung rồi hãy lưu nhé.');
+ }catch(e){
+  setUrlStatus('Chưa lấy được truyện từ link này. Website có thể chặn trích xuất hoặc dịch vụ đọc trang đang bận. Ông có thể mở trang và sao chép nội dung thủ công. Chi tiết: '+(e.message||'lỗi mạng'));
+ }finally{$('fetchStoryUrl').disabled=false}
+};
+$('saveImportedStory').onclick=()=>{
+ const title=$('importedTitle').value.trim(),text=$('importedText').value.trim();
+ if(!importedReady||!text){setUrlStatus('Hãy lấy nội dung từ link trước nhé.');return}
+ if(!book()){setUrlStatus('Ông tạo hoặc chọn bộ truyện trong thư viện trước đã nhé.');return}
+ save();
+ const b=book(),c={id:uid(),title:title||'Truyện từ link',text,pos:0,sourceUrl:$('storyUrl').value.trim()};
+ b.chapters.push(c);b.last=c.id;cid=c.id;persist();render();
+ importedReady=false;$('saveImportedStory').disabled=true;
+ $('importedText').value='';$('importedTitle').value='';
+ setUrlStatus('Đã thêm thành chương mới vào bộ truyện đang chọn.');
+};
 $('addBook').onclick=newBook;
 $('addChapter').onclick=newChapter;
 $('books').onchange=()=>{
