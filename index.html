@@ -131,8 +131,21 @@ const msg=t=>$('status').textContent=t;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib))}catch(e){msg('Không lưu được; bộ nhớ có thể đầy.')}}
 function save(){let c=chapter();if(c){c.title=$('title').value.trim()||c.title||'Chương';c.text=$('story').value;c.pos=pos;persist()}}
 function makeChunks(t){
-let a=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];
-for(let s of a){s=s.trim();while(s.length>220){let n=s.lastIndexOf(' ',220);if(n<80)n=220;out.push(s.slice(0,n).trim());s=s.slice(n).trim()}if(s)out.push(s)}
+let sentences=t.match(/[^.!?。！？\\n]+[.!?。！？]?|\\n+/g)||[],out=[];
+for(let sentence of sentences){
+ sentence=sentence.trim();
+ if(!sentence)continue;
+ while(sentence.length>150){
+  let cut=-1,limit=Math.min(180,sentence.length);
+  for(let i=limit-1;i>=75;i--){
+   if("，,；;：:".includes(sentence[i])){cut=i+1;break}
+  }
+  if(cut<0){cut=sentence.lastIndexOf(" ",limit);if(cut<75)cut=limit}
+  out.push(sentence.slice(0,cut).trim());
+  sentence=sentence.slice(cut).trim();
+ }
+ if(sentence)out.push(sentence);
+}
 return out
 }
 function progress(){
