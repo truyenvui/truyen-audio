@@ -72,7 +72,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <h2>🎙️ Giọng đọc</h2>
 <label for="voice">Chọn giọng</label>
 <select id="voice"><option value="">Tự chọn giọng mặc định</option></select>
-<div class="actions"><button id="refreshVoices" type="button">↻ Làm mới danh sách giọng</button></div>
+<div class="actions"><button id="refreshVoices" type="button">↻ Làm mới danh sách giọng</button><button id="testVoice" type="button">▶ Nghe thử giọng</button></div>
 <p class="small">Danh sách phụ thuộc vào những giọng Safari cung cấp cho trang web. Một số giọng tải trong Cài đặt iPhone có thể không xuất hiện ở đây.</p>
 <div class="two">
 <div>
@@ -249,7 +249,22 @@ $('speed').oninput=()=>{speedText();localStorage.setItem(SK,$('speed').value)};
 $('slower').onclick=()=>{$('speed').value=Math.max(.6,+$('speed').value-.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
 $('faster').onclick=()=>{$('speed').value=Math.min(2,+$('speed').value+.1).toFixed(1);speedText();localStorage.setItem(SK,$('speed').value)};
 $('voice').onchange=()=>localStorage.setItem(VK,$('voice').value);
-if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;$('refreshVoices').onclick=loadVoices}
+if('speechSynthesis'in window){
+loadVoices();
+speechSynthesis.onvoiceschanged=()=>loadVoices();
+$('refreshVoices').onclick=()=>loadVoices();
+$('testVoice').onclick=()=>{
+if(!('speechSynthesis'in window)){msg('Trình duyệt này chưa hỗ trợ đọc văn bản.');return}
+if(playing&&!paused){msg('Ông dừng truyện đang phát trước rồi hãy thử giọng nhé.');return}
+speechSynthesis.cancel();
+let u=new SpeechSynthesisUtterance('Xin chào, đây là giọng đọc thử của Góc Nghe Truyện.');
+let v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=+$('speed').value;
+u.onstart=()=>msg('Đang thử giọng: '+(v?v.name:'giọng mặc định của Safari')+'.');
+u.onend=()=>msg('Đã nghe thử xong.');
+u.onerror=e=>{if(e.error!=='canceled'&&e.error!=='interrupted')msg('Không thử được giọng này. Ông thử chọn giọng khác nhé.')};
+speechSynthesis.speak(u);
+};
+}
 
 $('play').onclick=()=>{
 let c=chapter();if(!c){msg('Tạo bộ truyện và chương trước nhé.');return}
