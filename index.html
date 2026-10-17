@@ -73,7 +73,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <label for="voice">Chọn giọng</label>
 <select id="voice"><option value="">Tự chọn giọng mặc định</option></select>
 <div class="actions"><button id="refreshVoices" type="button">↻ Làm mới danh sách giọng</button><button id="testVoice" type="button">▶ Nghe thử giọng</button></div>
-<p class="small">Danh sách phụ thuộc vào những giọng Safari cung cấp cho trang web. Một số giọng tải trong Cài đặt iPhone có thể không xuất hiện ở đây.</p>
+<p class="small">Mẹo nghe truyện: tốc độ mặc định 1.1× để nghe tự nhiên mà không quá chậm. Chọn giọng tiếng Việt sẵn có rồi bấm Nghe thử giọng để tìm chất giọng hợp ý ông. Danh sách phụ thuộc vào Safari; giọng Siri trong Cài đặt iPhone có thể không xuất hiện ở đây.</p>
 <div class="two">
 <div>
 <label>Tốc độ <span class="value" id="speedVal">1.0×</span></label>
@@ -241,7 +241,7 @@ if(chapter()){chapter().title=$('title').value.trim()||'Chương';persist();
 let o=[...$('chapters').options].find(x=>x.value===cid);if(o)o.textContent=chapter().title}
 };
 
-$('speed').value=localStorage.getItem(SK)||'1';
+$('speed').value=localStorage.getItem(SK)||'1.1';
 function speedText(){$('speedVal').textContent=(+$('speed').value).toFixed(1)+'×'}
 speedText();
 $('speed').oninput=()=>{speedText();localStorage.setItem(SK,$('speed').value)};
@@ -256,7 +256,7 @@ $('testVoice').onclick=()=>{
 if(!('speechSynthesis'in window)){msg('Trình duyệt này chưa hỗ trợ đọc văn bản.');return}
 if(playing){msg('Ông dừng truyện trước rồi hãy thử giọng nhé.');return}
 speechSynthesis.cancel();
-let u=new SpeechSynthesisUtterance('Xin chào, đây là giọng đọc thử của Góc Nghe Truyện.');
+let u=new SpeechSynthesisUtterance('Xin chào ông, mình cùng thư giãn một chút nhé. Hãy thả lỏng, nghe câu chuyện thật chậm rãi và tận hưởng từng khoảnh khắc bình yên.');
 let v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=+$('speed').value;
 u.onstart=()=>msg('Đang thử giọng: '+(v?v.name:'giọng mặc định của Safari')+'.');
 u.onend=()=>msg('Đã nghe thử xong.');
