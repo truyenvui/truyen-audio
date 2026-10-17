@@ -36,6 +36,7 @@ button.danger{color:#ffd6c8;border-color:#765044}
 .status{color:var(--gold);min-height:22px;margin-top:10px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
+.import-more{margin-top:16px;border-top:1px solid var(--border,#ddd);padding-top:12px}.import-more summary{cursor:pointer;font-weight:600;padding:8px 0}.import-more-body{padding-top:8px}
 </style>
 </head>
 <body>
@@ -65,10 +66,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <textarea id="importedText" placeholder="Nội dung lấy từ link sẽ hiện ở đây..." style="min-height:150px"></textarea>
 <p class="small">Ông có thể sửa nội dung trước khi lưu. Dữ liệu chỉ được thêm vào thư viện khi bấm “Lưu thành chương mới”; chương cũ không bị ghi đè.</p>
 <div class="status" id="urlStatus" role="status" aria-live="polite"></div>
-</section>
-
-<section class="card">
-<h2>📚 Nhập nhiều chương cùng lúc</h2>
+<details class="import-more">
+<summary>📚 Nhập nhiều chương cùng lúc</summary>
+<div class="import-more-body">
 <p class="small">Dán link trang truyện để thử tìm link chương, hoặc dán sẵn nhiều link chương (mỗi dòng một link). Tối đa 20 link mỗi lượt. Xem kết quả rồi mới lưu.</p>
 <label for="bulkStoryUrl">Link trang truyện</label>
 <input id="bulkStoryUrl" type="text" inputmode="url" placeholder="https://.../truyen/ten-truyen">
@@ -79,6 +79,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <div class="status" id="bulkStatus" role="status" aria-live="polite"></div>
 <div id="bulkResults" class="small"></div>
 <p class="small">Tự tìm link chỉ nhận diện được link mà dịch vụ trích xuất trả về; không phải website nào cũng hiển thị đủ danh sách chương. Chỉ thêm vào thư viện khi ông bấm lưu.</p>
+</div>
+</details>
 </section>
 
 <section class="card">
@@ -159,6 +161,7 @@ const msg=t=>$('status').textContent=t;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib))}catch(e){msg('Không lưu được; bộ nhớ có thể đầy.')}}
 function save(){let c=chapter();if(c){c.title=$('title').value.trim()||c.title||'Chương';c.text=$('story').value;c.pos=pos;persist()}}
 function makeChunks(t){
+t=t.replace(/[“”„‟「」『』\"']/g,'');
 let sentences=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];
 for(let sentence of sentences){
  sentence=sentence.trim();
@@ -275,17 +278,8 @@ $('fetchStoryUrl').onclick=async()=>{
  $('fetchStoryUrl').disabled=true;$('saveImportedStory').disabled=true;importedReady=false;
  setUrlStatus('Đang thử lấy nội dung trang…');
  try{
-  const readerUrl='https://r.jina.ai/'+target.href;
-  const response=await fetch(readerUrl,{headers:{'Accept':'text/plain'}});
-  if(!response.ok)throw new Error('Dịch vụ đọc trang trả về mã '+response.status);
-  let text=await response.text();
-  if(!text.trim())throw new Error('Trang không có nội dung văn bản đọc được.');
-  let title=target.pathname.split('/').filter(Boolean).pop()||target.hostname;
-  title=decodeURIComponent(title).replace(/[-_]+/g,' ').replace(/\.[a-z0-9]+$/i,'').trim()||target.hostname;
-  const titleMatch=text.match(/^Title:\s*(.+)$/mi);
-  if(titleMatch)title=titleMatch[1].trim();
-  text=text.replace(/^Title:\s*.*\n/im,'').replace(/^URL Source:\s*.*\n/im,'').replace(/^Markdown Content:\s*\n/im,'').trim();
-  if(text.length<80)throw new Error('Trang trả về quá ít nội dung; có thể website chặn trích xuất.');
+  const result=await readBulkUrl(target.href);
+  let text=result.text,title=result.title;
   $('importedTitle').value=title;
   $('importedText').value=text;
   importedReady=true;$('saveImportedStory').disabled=false;
