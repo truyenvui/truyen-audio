@@ -316,21 +316,22 @@ $('saveImportedStory').onclick=()=>{
  }
  async function readBulkUrl(url){
   const endpoints=[
-   {label:'Jina Reader',url:'https://r.jina.ai/'+url},
-   {label:'Jina Reader alternate URL',url:'https://r.jina.ai/http://'+url.replace(/^https?:\/\//i,'')}
+   {label:'Jina mặc định',url:'https://r.jina.ai/'+url,headers:{'Accept':'text/plain','X-No-Cache':'true'}},
+   {label:'Jina chế độ text',url:'https://r.jina.ai/'+url,headers:{'Accept':'text/plain','X-Respond-With':'text','X-No-Cache':'true'}},
+   {label:'Jina trình duyệt',url:'https://r.jina.ai/'+url,headers:{'Accept':'text/plain','X-Engine':'browser','X-Timeout':'30','X-Respond-With':'markdown','X-No-Cache':'true'}}
   ];
   let lastError='Không lấy được nội dung';
   for(const endpoint of endpoints){
    try{
-    const response=await fetch(endpoint.url,{headers:{'Accept':'text/plain'}});
+    const response=await fetch(endpoint.url,{headers:endpoint.headers});
     const raw=await response.text();
-    if(!response.ok){lastError=endpoint.label+' trả mã HTTP '+response.status+(raw?' — '+raw.slice(0,140).replace(/\s+/g,' '):'');continue}
+    if(!response.ok){lastError=endpoint.label+' trả HTTP '+response.status+(raw?' — '+raw.slice(0,120).replace(/\s+/g,' '):'');continue}
     let text=raw,m=text.match(/^Title:\s*(.+)$/mi);
     let title=m?m[1].trim():(new URL(url).pathname.split('/').filter(Boolean).pop()||'Chương mới').replace(/[-_]+/g,' ');
     text=text.replace(/^Title:\s*.*\n/im,'').replace(/^URL Source:\s*.*\n/im,'').replace(/^Markdown Content:\s*\n/im,'').trim();
-    if(text.length<100){lastError=endpoint.label+' chỉ trả '+text.length+' ký tự. Phản hồi đầu: '+raw.slice(0,160).replace(/\s+/g,' ');continue}
+    if(text.length<100){lastError=endpoint.label+' chỉ trả '+text.length+' ký tự; phản hồi: '+raw.slice(0,140).replace(/\s+/g,' ');continue}
     return {url,title,text,ok:true,source:endpoint.label};
-   }catch(e){lastError=endpoint.label+': '+(e.message||'lỗi mạng hoặc CORS')}
+   }catch(e){lastError=endpoint.label+': '+(e.message||'lỗi mạng/CORS')}
   }
   throw new Error(lastError);
  }
