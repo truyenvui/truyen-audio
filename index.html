@@ -176,15 +176,14 @@ return;
 }
 s.replaceChildren(new Option('Tự chọn giọng mặc định',''));
 let vi=voices.filter(v=>(v.lang||'').toLowerCase().startsWith('vi'));
-let other=voices.filter(v=>!(v.lang||'').toLowerCase().startsWith('vi'));
-[...vi,...other].forEach(v=>s.add(new Option(v.name+' ('+(v.lang||'không rõ ngôn ngữ')+')',v.voiceURI)));
+vi.forEach(v=>s.add(new Option(v.name+' ('+(v.lang||'không rõ ngôn ngữ')+')',v.voiceURI)));
 s.value=old;
 if(old&&s.value!==old){
 localStorage.setItem(VK,'');
 msg('Giọng đã lưu không có trong danh sách Safari hiện cung cấp. Hãy chọn một giọng đang hiển thị.');
 }else if(!vi.length){
 msg(voices.length
-?'Safari chưa cung cấp giọng tiếng Việt cho trang này. Ông có thể chọn giọng khác đang hiển thị.'
+?'Safari chưa cung cấp giọng tiếng Việt cho trang này. Hãy kiểm tra Cài đặt giọng đọc trên iPhone rồi thử làm mới.'
 :'Safari chưa trả về danh sách giọng đọc. Thử nút Làm mới danh sách giọng nhé.');
 }else{
 msg('Đã tải '+vi.length+' giọng tiếng Việt từ Safari.');
