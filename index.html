@@ -255,7 +255,7 @@ speechSynthesis.onvoiceschanged=()=>loadVoices();
 $('refreshVoices').onclick=()=>loadVoices();
 $('testVoice').onclick=()=>{
 if(!('speechSynthesis'in window)){msg('Trình duyệt này chưa hỗ trợ đọc văn bản.');return}
-if(playing&&!paused){msg('Ông dừng truyện đang phát trước rồi hãy thử giọng nhé.');return}
+if(playing){msg('Ông dừng truyện trước rồi hãy thử giọng nhé.');return}
 speechSynthesis.cancel();
 let u=new SpeechSynthesisUtterance('Xin chào, đây là giọng đọc thử của Góc Nghe Truyện.');
 let v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=+$('speed').value;
