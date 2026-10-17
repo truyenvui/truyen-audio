@@ -131,7 +131,7 @@ const msg=t=>$('status').textContent=t;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib))}catch(e){msg('Không lưu được; bộ nhớ có thể đầy.')}}
 function save(){let c=chapter();if(c){c.title=$('title').value.trim()||c.title||'Chương';c.text=$('story').value;c.pos=pos;persist()}}
 function makeChunks(t){
-let sentences=t.match(/[^.!?。！？\\n]+[.!?。！？]?|\\n+/g)||[],out=[];
+let sentences=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];
 for(let sentence of sentences){
  sentence=sentence.trim();
  if(!sentence)continue;
