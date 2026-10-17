@@ -56,31 +56,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 
 <section class="card">
 <h2>🔗 Lấy truyện từ đường link</h2>
-<label for="storyUrl">Link trang truyện</label>
-<input id="storyUrl" type="text" inputmode="url" placeholder="https://...">
-<p class="small">Dán link bài truyện hoặc chương truyện. Công cụ sẽ thử trích xuất nội dung qua dịch vụ đọc trang bên ngoài; một số website chặn truy cập hoặc không hỗ trợ.</p>
-<div class="actions"><button class="primary" id="fetchStoryUrl" type="button">Lấy nội dung</button><button id="saveImportedStory" type="button" disabled>Lưu thành chương mới</button></div>
-<label for="importedTitle">Tên chương lấy được</label>
-<input id="importedTitle" type="text" placeholder="Tên chương">
-<label for="importedText">Xem trước nội dung</label>
-<textarea id="importedText" placeholder="Nội dung lấy từ link sẽ hiện ở đây..." style="min-height:150px"></textarea>
-<p class="small">Ông có thể sửa nội dung trước khi lưu. Dữ liệu chỉ được thêm vào thư viện khi bấm “Lưu thành chương mới”; chương cũ không bị ghi đè.</p>
-<div class="status" id="urlStatus" role="status" aria-live="polite"></div>
-<details class="import-more">
-<summary>📚 Nhập nhiều chương cùng lúc</summary>
-<div class="import-more-body">
-<p class="small">Dán link trang truyện để thử tìm link chương, hoặc dán sẵn nhiều link chương (mỗi dòng một link). Tối đa 20 link mỗi lượt. Xem kết quả rồi mới lưu.</p>
-<label for="bulkStoryUrl">Link trang truyện</label>
+<p class="small">Dùng chung một chỗ để lấy một chương hoặc nhiều chương. Dán một link hoặc tối đa 20 link (mỗi dòng một link), xem kết quả rồi mới lưu vào bộ truyện đang chọn.</p>
+<label for="bulkStoryUrl">Link trang truyện (không bắt buộc)</label>
 <input id="bulkStoryUrl" type="text" inputmode="url" placeholder="https://.../truyen/ten-truyen">
 <div class="actions"><button id="discoverChapters" type="button">Tìm link chương</button></div>
-<label for="bulkChapterUrls">Danh sách link chương — mỗi dòng một link</label>
-<textarea id="bulkChapterUrls" placeholder="https://.../chuong-1&#10;https://.../chuong-2" style="min-height:110px"></textarea>
-<div class="actions"><button class="primary" id="fetchBulkChapters" type="button">Lấy nhiều chương</button><button id="saveBulkChapters" type="button" disabled>Lưu chương lấy được</button></div>
+<label for="bulkChapterUrls">Link chương — mỗi dòng một link</label>
+<textarea id="bulkChapterUrls" placeholder="https://.../chuong-1&#10;https://.../chuong-2" style="min-height:150px"></textarea>
+<div class="actions"><button class="primary" id="fetchBulkChapters" type="button">Lấy nội dung</button><button id="saveBulkChapters" type="button" disabled>Lưu chương lấy được</button></div>
 <div class="status" id="bulkStatus" role="status" aria-live="polite"></div>
 <div id="bulkResults" class="small"></div>
-<p class="small">Tự tìm link chỉ nhận diện được link mà dịch vụ trích xuất trả về; không phải website nào cũng hiển thị đủ danh sách chương. Chỉ thêm vào thư viện khi ông bấm lưu.</p>
-</div>
-</details>
+<p class="small">Một link thì thêm một chương; nhiều link thì thêm nhiều chương. Chương cũ không bị ghi đè. Một số website có thể chặn trích xuất.</p>
 </section>
 
 <section class="card">
@@ -129,6 +114,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:8px}
 <button id="pause">Ⅱ Tạm dừng</button>
 <button id="resume">▶ Tiếp tục</button>
 <button id="stop">■ Dừng</button>
+<button id="back10" type="button">↶ Lùi 10 giây</button><button id="forward10" type="button">Tua 10 giây ↷</button>
 </div>
 <div class="progress"><div id="bar"></div></div>
 <div class="row small"><span id="prog">Sẵn sàng</span><span class="grow"></span><span id="pct"></span></div>
@@ -266,39 +252,6 @@ u.onend=()=>{if(id!==session||!playing)return;pos++;let c=chapter();if(c){c.pos=
 u.onerror=e=>{if(id===session&&e.error!=='canceled'&&e.error!=='interrupted'){playing=false;msg('Giọng đọc gặp lỗi. Thử chọn giọng khác nhé.')}};
 speechSynthesis.speak(u);msg('Đang đọc: '+(chapter()?.title||'chương truyện'));progress()
 }
-
-let importedReady=false;
-function setUrlStatus(t){$('urlStatus').textContent=t}
-$('fetchStoryUrl').onclick=async()=>{
- const raw=$('storyUrl').value.trim();
- if(!raw){setUrlStatus('Dán link trang truyện trước nhé.');return}
- let target;
- try{target=new URL(raw);if(!['http:','https:'].includes(target.protocol))throw 0}
- catch(e){setUrlStatus('Link chưa hợp lệ. Hãy nhập link bắt đầu bằng https:// hoặc http://');return}
- $('fetchStoryUrl').disabled=true;$('saveImportedStory').disabled=true;importedReady=false;
- setUrlStatus('Đang thử lấy nội dung trang…');
- try{
-  const result=await readBulkUrl(target.href);
-  let text=result.text,title=result.title;
-  $('importedTitle').value=title;
-  $('importedText').value=text;
-  importedReady=true;$('saveImportedStory').disabled=false;
-  setUrlStatus('Đã lấy được khoảng '+text.length.toLocaleString('vi-VN')+' ký tự. Ông xem lại nội dung rồi hãy lưu nhé.');
- }catch(e){
-  setUrlStatus('Chưa lấy được truyện từ link này. Website có thể chặn trích xuất hoặc dịch vụ đọc trang đang bận. Ông có thể mở trang và sao chép nội dung thủ công. Chi tiết: '+(e.message||'lỗi mạng'));
- }finally{$('fetchStoryUrl').disabled=false}
-};
-$('saveImportedStory').onclick=()=>{
- const title=$('importedTitle').value.trim(),text=$('importedText').value.trim();
- if(!importedReady||!text){setUrlStatus('Hãy lấy nội dung từ link trước nhé.');return}
- if(!book()){setUrlStatus('Ông tạo hoặc chọn bộ truyện trong thư viện trước đã nhé.');return}
- save();
- const b=book(),c={id:uid(),title:title||'Truyện từ link',text,pos:0,sourceUrl:$('storyUrl').value.trim()};
- b.chapters.push(c);b.last=c.id;cid=c.id;persist();render();
- importedReady=false;$('saveImportedStory').disabled=true;
- $('importedText').value='';$('importedTitle').value='';
- setUrlStatus('Đã thêm thành chương mới vào bộ truyện đang chọn.');
-};
 
  const bulkState={items:[],busy:false};
  const bulkStatus=t=>$('bulkStatus').textContent=t;
@@ -441,6 +394,19 @@ if(chapter()){chapter().pos=pos;persist()}msg('Đã tạm dừng; tiến độ �
 };
 $('resume').onclick=()=>{if(playing&&paused){paused=false;speechSynthesis.resume();setupMediaSession();msg('Đang tiếp tục…')}};
 $('stop').onclick=()=>{if(chapter()){chapter().pos=pos;persist()}stop('Đã dừng. Tiến độ đã lưu.')};
+// SpeechSynthesis không cung cấp vị trí thời gian nhất quán trên mọi Safari; tua theo các đoạn ngắn gần 10 giây.
+function skipChunks(direction){
+ if(!chunks.length){msg('Chưa có nội dung để tua.');return}
+ const wasPlaying=playing, wasPaused=paused;
+ session++;speechSynthesis.cancel();
+ pos=Math.max(0,Math.min(chunks.length-1,pos+direction));
+ if(chapter()){chapter().pos=pos;persist()}
+ progress();
+ if(wasPlaying){playing=true;paused=false;const id=session;speak(id);if(wasPaused){paused=true;speechSynthesis.pause();setupMediaSession();}}
+ else msg(direction<0?'Đã lùi khoảng 10 giây.':'Đã tua tới khoảng 10 giây.');
+}
+$('back10').onclick=()=>skipChunks(-1);
+$('forward10').onclick=()=>skipChunks(1);
 
 function timerUpdate(){
 if(!deadline){$('timerVal').textContent='Tắt';return}
