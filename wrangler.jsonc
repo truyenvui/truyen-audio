@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "goc-nghe-truyen-api",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-18",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "goc-nghe-truyen-db",
+      "database_id": "8f971074-1efc-45ae-8437-9898753cc4bd"
+    }
+  ]
+}
