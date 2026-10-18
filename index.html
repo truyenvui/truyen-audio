@@ -71,7 +71,8 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 const $=id=>document.getElementById(id), KEY='goc_nghe_truyen_library_v1', SK='goc_nghe_truyen_speed_v2', VK='goc_nghe_truyen_voice_v2';
 /* Bản làm lại từ đầu theo yêu cầu của người dùng: xoá thư viện cũ và cài đặt giọng/tốc độ cũ một lần khi phiên bản này chạy. */
 try{if(localStorage.getItem('goc_nghe_truyen_fresh_reset_v1')!=='done'){localStorage.removeItem(KEY);localStorage.removeItem('goc_nghe_truyen_story_v2');localStorage.removeItem(SK);localStorage.removeItem(VK);localStorage.setItem('goc_nghe_truyen_fresh_reset_v1','done')}}catch(e){}
-let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,imports=[],timerId=null,deadline=0,history=[];\nconst audioPlayer=new Audio();audioPlayer.preload='auto';let audioMode=true,audioFailed=false;
+let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,imports=[],timerId=null,deadline=0,history=[];
+const audioPlayer=new Audio();audioPlayer.preload='auto';let audioMode=true,audioFailed=false;
 try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(saved))lib=saved;history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]');bid=lib[0]?.id||'';cid=lib[0]?.chapters?.[0]?.id||''}catch(e){lib=[];history=[]}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
