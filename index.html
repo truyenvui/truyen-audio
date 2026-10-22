@@ -90,7 +90,7 @@ function updateProgressUI(){const total=chapterDuration(),elapsed=Math.min(total
 function startProgressTimer(){if(progressTimer===null)progressTimer=setInterval(updateProgressUI,250)}
 function stopProgressTimer(){if(progressTimer!==null){clearInterval(progressTimer);progressTimer=null}}
 function updatePlayer(){updateMediaSession();renderHistory();say('nowTitle',chapter()?.title||'Chưa chọn chương');say('nowBook',book()?.title||'Chọn truyện trong thư viện để bắt đầu');updateProgressUI();$('play').textContent=playing&&!paused?'Ⅱ':'▶';renderPlaylist()}
-function clearAudio(el){el.pause();el.removeAttribute('src');el.load();delete el.dataset.chunkPos}
+function clearAudio(el){el.onended=null;el.onerror=null;el.pause();el.removeAttribute('src');el.load();delete el.dataset.chunkPos}
 function stop(t='Đã dừng.'){session++;playing=false;paused=false;chunkElapsed=0;chunkStartedAt=0;stopProgressTimer();clearAudio(audioPlayer);clearAudio(standbyPlayer);speechSynthesis.cancel();updatePlayer();say('playStatus',t)}
 function chosen(){return voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>(v.lang||'').toLowerCase().startsWith('vi'))||null}
 function loadVoices(){if(!('speechSynthesis'in window))return;const old=$('voice').value||localStorage.getItem(VK)||'';voices=speechSynthesis.getVoices();const s=$('voice');s.replaceChildren(new Option('Tự chọn giọng Safari',''));voices.filter(v=>(v.lang||'').toLowerCase().startsWith('vi')).forEach(v=>s.add(new Option(v.name+' ('+v.lang+')',v.voiceURI)));s.value=old}
