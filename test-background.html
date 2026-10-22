@@ -20,7 +20,7 @@ const KEY='goc_nghe_truyen_library_v1', $=id=>document.getElementById(id);
 let library=[],parts=[],index=0,playing=false,paused=false,pending=false,session=0;
 let active=new Audio(),standby=new Audio();active.preload='auto';standby.preload='auto';
 function clean(t){return String(t||'').replace(/[“”„‟「」『』]/g,'').replace(/(^|\s)"|"(?=\s|$)/g,'$1')}
-function split(t){t=clean(t);const pieces=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];for(let s of pieces){s=s.trim();while(s.length>150){let k=-1;for(let i=Math.min(145,s.length-1);i>=65;i--)if('，,；;：:'.includes(s[i])){k=i+1;break}if(k<0){k=s.lastIndexOf(' ',145);if(k<65)k=145}out.push(s.slice(0,k).trim());s=s.slice(k).trim()}if(s)out.push(s)}return out}
+function split(t){t=clean(t);const pieces=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];for(let s of pieces){s=s.trim();while(s.length>80){let k=-1;for(let i=Math.min(75,s.length-1);i>=35;i--)if('，,；;：:'.includes(s[i])){k=i+1;break}if(k<0){k=s.lastIndexOf(' ',75);if(k<35)k=75}out.push(s.slice(0,k).trim());s=s.slice(k).trim()}if(s)out.push(s)}return out}
 function say(t){$('status').textContent=t}
 function clear(a){a.onended=null;a.onerror=null;a.pause();a.removeAttribute('src');a.load();delete a.dataset.part}
 function tts(t){return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q='+encodeURIComponent(t)}
