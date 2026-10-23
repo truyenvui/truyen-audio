@@ -64,7 +64,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <label for="speed">Tốc độ đọc <b id="speedLabel" style="color:var(--gold)">1.1×</b></label><input id="speed" type="range" min=".6" max="2" step=".1" value="1.1">
 <label for="timer">Hẹn giờ ngủ</label><select id="timer"><option value="0">Không hẹn giờ</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="90">90 phút</option></select>
 <p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p>
-<div class="actions"><button id="export">Xuất bản sao JSON</button><button id="importFile">Nhập bản sao</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+<div class="actions"><button id="exportEpub" class="primary">Xuất bộ truyện thành EPUB</button></div><p class="small">EPUB sẽ chứa các chương đã lưu trong bộ truyện đang chọn. Việc tự lấy thêm chương phụ thuộc vào quyền truy cập của website nguồn.</p><div class="actions"><button id="export">Xuất bản sao JSON</button><button id="importFile">Nhập bản sao</button><input id="file" type="file" accept="application/json,.json" hidden></div>
 </section></div>
 </main>
 <nav class="bottom"><div class="bottominner"><button class="nav active" data-target="playerSection"><span>♧</span>Nghe truyện</button><button class="nav" data-target="librarySection"><span>♧</span>Thư viện</button><button class="nav" data-target="historySection"><span>◷</span>Lịch sử</button><button class="nav" data-target="settingsSection"><span>♙</span>Cài đặt</button></div></nav>
@@ -160,8 +160,38 @@ $('refreshVoices').onclick=loadVoices;if('speechSynthesis'in window){loadVoices(
 $('testVoice').onclick=()=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('Xin chào ông, mình cùng thư giãn và nghe truyện nhé.');const v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=Math.max(.6,Math.min(2,+$('speed').value||1.1));speechSynthesis.speak(u)};
 $('timerBtn').onclick=()=>{showTab('settingsSection');setTimeout(()=>$('timer').focus(),250)};$('chapterBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('chapters').focus(),250)};
 $('timer').onchange=()=>{clearInterval(timerId);timerId=null;const n=+$('timer').value;deadline=n?Date.now()+n*60000:0;if(deadline)timerId=setInterval(()=>{const left=deadline-Date.now();say('timerVal',left<=0?'Hết giờ':fmt(Math.ceil(left/1000)));if(left<=0){clearInterval(timerId);timerId=null;$('timer').value='0';stop('Hết giờ ngủ. Chúc ông ngủ ngon!');say('timerVal','Tắt')}},1000);say('timerVal',n?n+'p':'Tắt')};
+function exportEpub(){
+ const b=book();if(!b){say('libraryStatus','Ông hãy chọn hoặc tạo bộ truyện trước nhé.');return}
+ const chapters=(b.chapters||[]).filter(c=>String(c.text||'').trim());
+ if(!chapters.length){say('libraryStatus','Bộ truyện này chưa có chương có nội dung để xuất.');return}
+ const xml=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+ const xhtml=(c,i)=>'<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi" xml:lang="vi"><head><title>'+xml(c.title||('Chương '+(i+1)))+'</title><meta charset="utf-8"/><style>body{font-family:serif;line-height:1.7;margin:5%;}h1{text-align:center;font-size:1.5em;margin:1em 0 2em;}p{margin:0 0 1em;white-space:pre-wrap;}</style></head><body><h1>'+xml(c.title||('Chương '+(i+1)))+'</h1>'+String(c.text||'').split(/\n\s*\n/).map(p=>'<p>'+xml(p).replace(/\n/g,'<br/>')+'</p>').join('')+'</body></html>';
+ const files=[{name:'mimetype',data:'application/epub+zip'},{name:'META-INF/container.xml',data:'<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'}];
+ const ids=chapters.map((c,i)=>'c'+(i+1));
+ const manifest=chapters.map((c,i)=>'<item id="'+ids[i]+'" href="chapter'+(i+1)+'.xhtml" media-type="application/xhtml+xml"/>').join('');
+ const nav=chapters.map((c,i)=>'<li><a href="chapter'+(i+1)+'.xhtml">'+xml(c.title||('Chương '+(i+1)))+'</a></li>').join('');
+ files.push({name:'OEBPS/nav.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi" xml:lang="vi"><head><title>Mục lục</title><meta charset="utf-8"/></head><body><nav epub:type="toc" id="toc"><h1>'+xml(b.title)+'</h1><ol>'+nav+'</ol></nav></body></html>'});
+ files.push({name:'OEBPS/content.opf',data:'<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid" xml:lang="vi"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="bookid">urn:uuid:'+uid()+'</dc:identifier><dc:title>'+xml(b.title||'Góc Nghe Truyện')+'</dc:title><dc:language>vi</dc:language><meta property="dcterms:modified">'+new Date().toISOString().replace(/\.\d{3}Z$/,'Z')+'</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'+manifest+'</manifest><spine>'+ids.map(id=>'<itemref idref="'+id+'"/>').join('')+'</spine></package>'});
+ chapters.forEach((c,i)=>files.push({name:'OEBPS/chapter'+(i+1)+'.xhtml',data:xhtml(c,i)}));
+ const enc=new TextEncoder(),crcTable=new Uint32Array(256);
+ for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);crcTable[n]=c>>>0}
+ const crc32=bytes=>{let c=0xffffffff;for(const v of bytes)c=crcTable[(c^v)&255]^(c>>>8);return (c^0xffffffff)>>>0};
+ const chunksOut=[],central=[];let offset=0;
+ const put16=(v,n)=>v.setUint16(0,n,true),put32=(v,n)=>v.setUint32(0,n>>>0,true);
+ files.forEach((f,index)=>{
+  const name=enc.encode(f.name),data=enc.encode(f.data),crc=crc32(data),local=new Uint8Array(30+name.length),lv=new DataView(local.buffer);
+  put32(new DataView(local.buffer,0,4),0x04034b50);lv.setUint16(4,20,true);lv.setUint16(6,0x800,true);lv.setUint16(8,0,true);lv.setUint16(10,0,true);lv.setUint16(12,0,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,name.length,true);lv.setUint16(28,0,true);local.set(name,30);
+  chunksOut.push(local,data);
+  const cent=new Uint8Array(46+name.length),cv=new DataView(cent.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);cent.set(name,46);central.push(cent);offset+=local.length+data.length;
+ });
+ const centralSize=central.reduce((n,x)=>n+x.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,centralSize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+ const blob=new Blob([...chunksOut,...central,end],{type:'application/epub+zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ const filename=(b.title||'goc-nghe-truyen').replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'goc-nghe-truyen';
+ a.href=url;a.download=filename+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
+}
 function exportLibrary(){const blob=new Blob([JSON.stringify({library:lib},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='goc-nghe-truyen.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$('export').onclick=exportLibrary;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
+$('exportEpub').onclick=exportEpub;$('export').onclick=exportLibrary;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
  playerSection:['importSection','playerSection'],
  librarySection:['librarySection'],
