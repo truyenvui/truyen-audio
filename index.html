@@ -181,7 +181,58 @@ $('exportCollected').onclick=()=>{
  const enc=new TextEncoder(),files=[{name:'mimetype',data:'application/epub+zip'},{name:'META-INF/container.xml',data:'<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'}];
  const ch=ready.map((c,i)=>({title:document.querySelector('[data-title="'+imports.indexOf(c)+'"]')?.value.trim()||c.title||('Chương '+(i+1)),text:document.querySelector('[data-text="'+imports.indexOf(c)+'"]')?.value??c.text}));
  const list=ch.map((c,i)=>'<li><a href="chapter'+(i+1)+'.xhtml">'+xml(c.title)+'</a></li>').join('');
- files.push({name:'OEBPS/nav.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi"><head><title>Mục lục</title><meta charset="utf-8"/></head><body><nav epub:type="toc"><h1>'+xml(title)+'</h1><ol>'+list+'</ol></nav></body></html>'});
+ files.push({name:'OEBPS/nav.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi"><head><title>Mục lục</title><meta charset="utf-8"/></head><body><nav epub:type="toc"><h1>'+xml(title)+'</h1><ol>'+list+'</ol></nav>
+<script>
+/* Fallback handler: keeps chapter discovery responsive even if the main app script fails. */
+(()=>{
+ const button=document.getElementById('discover');
+ const status=document.getElementById('importStatus');
+ const input=document.getElementById('storyUrl');
+ const urlsBox=document.getElementById('urls');
+ if(!button||!status||!input||!urlsBox)return;
+ button.type='button';
+ button.onclick=async()=>{
+  let page;
+  try{
+   page=new URL(input.value.trim());
+   if(!/^https?:$/.test(page.protocol))throw new Error('Chỉ hỗ trợ link bắt đầu bằng https:// hoặc http://.');
+  }catch(e){status.textContent=e.message||'Ông hãy dán link trang truyện hợp lệ trước nhé.';return}
+  button.disabled=true;
+  button.textContent='Đang tìm link…';
+  status.textContent='Đã nhận lệnh. Đang đọc trang truyện, ông chờ một chút nhé…';
+  try{
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),25000);
+   let response;
+   try{response=await fetch('https://r.jina.ai/'+page.href,{headers:{Accept:'text/plain'},signal:controller.signal,cache:'no-store',mode:'cors'})}
+   finally{clearTimeout(timer)}
+   const raw=await response.text();
+   if(!response.ok)throw new Error(response.status===403?'Dịch vụ đọc trang bị website chặn (403).':response.status===404?'Không tìm thấy trang truyện (404).':'Dịch vụ đọc trang báo lỗi HTTP '+response.status+'.');
+   if(/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(raw))throw new Error('Website yêu cầu xác minh bảo mật. App không thể tự vượt bước này.');
+   const links=[...raw.matchAll(/\]\((https?:\/\/[^\s)]+)\)/g)].map(m=>m[1].replace(/&amp;/g,'&'));
+   links.push(...[...raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g)].map(m=>m[0].replace(/[.,;]+$/,'')));
+   const slug=page.pathname.split('/').filter(Boolean).pop()||'';
+   const norm=s=>decodeURIComponent(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
+   const wanted=norm(slug);
+   const chapterPattern=/(chuong|chapter|chap|tap|phan)[-_/ ]?\d|\d{1,6}(?:\.html?)?$/i;
+   const found=[...new Set(links.map(h=>{try{return new URL(h,page.href)}catch{return null}}).filter(u=>{
+    if(!u||u.hostname!==page.hostname||u.href===page.href)return false;
+    const path=decodeURIComponent(u.pathname);
+    const same=norm(path).includes(wanted)||path.toLowerCase().includes('/chuong/')||path.toLowerCase().includes('/chapter/');
+    return same&&chapterPattern.test(path);
+   }).map(u=>u.href))].slice(0,200);
+   if(!found.length)throw new Error('Đã kết nối được dịch vụ nhưng không thấy link chương trong nội dung trả về. Có thể trang dùng danh sách tải bằng JavaScript hoặc cấu trúc link khác.');
+   const number=u=>{const m=decodeURIComponent(new URL(u).pathname).match(/(?:chuong|chapter|chap|tap|phan)[^0-9]{0,8}(\d{1,6})/i)||decodeURIComponent(new URL(u).pathname).match(/(\d{1,6})(?:\.html?)?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER};
+   found.sort((a,b)=>number(a)-number(b)||a.localeCompare(b));
+   urlsBox.value=found.join('\n');
+   status.textContent='Đã tìm thấy '+found.length+' link chương. Kiểm tra danh sách bên dưới rồi bấm “Lấy nội dung”.';
+  }catch(e){status.textContent=e.name==='AbortError'?'Đọc trang quá thời gian chờ (25 giây). Ông thử lại sau nhé.':(e.message||'Có lỗi khi tìm link chương.')}
+  finally{button.disabled=false;button.textContent='✧ Tìm link chương'}
+ };
+})();
+</script>
+
+</body></html>'});
  const manifest=ch.map((c,i)=>'<item id="c'+i+'" href="chapter'+(i+1)+'.xhtml" media-type="application/xhtml+xml"/>').join('');
  files.push({name:'OEBPS/content.opf',data:'<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid" xml:lang="vi"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:'+Date.now()+'-gocnghe</dc:identifier><dc:title>'+xml(title)+'</dc:title><dc:language>vi</dc:language><meta property="dcterms:modified">'+new Date().toISOString().replace(/\.\d{3}Z$/,'Z')+'</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'+manifest+'</manifest><spine>'+ch.map((c,i)=>'<itemref idref="c'+i+'"/>').join('')+'</spine></package>'});
  ch.forEach((c,i)=>files.push({name:'OEBPS/chapter'+(i+1)+'.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" lang="vi"><head><title>'+xml(c.title)+'</title><meta charset="utf-8"/><style>body{font-family:serif;line-height:1.7;margin:5%}h1{text-align:center}p{white-space:pre-wrap;line-height:1.8}</style></head><body><h1>'+xml(c.title)+'</h1>'+String(c.text).split(/\n\s*\n/).map(p=>'<p>'+xml(p).replace(/\n/g,'<br/>')+'</p>').join('')+'</body></html>'}));
