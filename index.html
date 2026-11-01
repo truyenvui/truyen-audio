@@ -68,7 +68,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <label for="speed">Tốc độ đọc <b id="speedLabel" style="color:var(--gold)">1.1×</b></label><input id="speed" type="range" min=".6" max="2" step=".1" value="1.1">
 <label for="timer">Hẹn giờ ngủ</label><select id="timer"><option value="0">Không hẹn giờ</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="90">90 phút</option></select>
 <p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p>
-<div class="actions"><button id="exportEpub" class="primary">Xuất bộ truyện thành EPUB</button></div><p class="small">EPUB sẽ chứa các chương đã lưu trong bộ truyện đang chọn. Việc tự lấy thêm chương phụ thuộc vào quyền truy cập của website nguồn.</p><div class="actions"><button id="export">Xuất bản sao JSON</button><button id="importFile">Nhập bản sao</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+<p class="small">EPUB sẽ chứa toàn bộ chương có nội dung của bộ truyện đang chọn trong thư viện.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất EPUB từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
 </section></div>
 </main>
 <nav class="bottom"><div class="bottominner"><button class="nav active" data-target="playerSection"><span>♧</span>Nghe truyện</button><button class="nav" data-target="librarySection"><span>♧</span>Thư viện</button><button class="nav" data-target="historySection"><span>◷</span>Lịch sử</button><button class="nav" data-target="settingsSection"><span>♙</span>Cài đặt</button></div></nav>
@@ -77,7 +77,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 const $=id=>document.getElementById(id), KEY='goc_nghe_truyen_library_v1', SK='goc_nghe_truyen_speed_v2', VK='goc_nghe_truyen_voice_v2';
 let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,imports=[],skippedCount=0,timerId=null,deadline=0,history=[],chunkElapsed=0,chunkStartedAt=0,progressTimer=null;
 let audioPlayer=new Audio(),standbyPlayer=new Audio();audioPlayer.preload='auto';standbyPlayer.preload='auto';let audioMode=true,audioFailed=false;
-try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(saved))lib=saved;history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]');bid=lib[0]?.id||'';cid=lib[0]?.chapters?.[0]?.id||''}catch(e){lib=[];history=[]}
+try{history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]')}catch(e){history=[]}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
 function normalizedSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -88,7 +88,15 @@ function bookMatchesStory(b,url){const slug=storySlugFromUrl(url);if(slug&&norma
 function isAlreadySaved(url,title=''){for(const b of lib){if((b.chapters||[]).some(c=>c.sourceUrl===url))return true}const no=chapterNumber(url)||chapterNumber(title);if(!no)return false;for(const b of lib){if(!bookMatchesStory(b,url))continue;if((b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url)&&((chapterNumber(c.sourceUrl)||chapterNumber(c.title))===no)))return true;if((b.chapters||[]).some(c=>!c.sourceUrl&&chapterNumber(c.title)===no&&normalizedSlug(b.title)===storySlugFromUrl(url)))return true}return false}
 function isAlreadyImported(url){const no=chapterNumber(url);return imports.some(x=>{if(x.url===url)return true;const oldNo=chapterNumber(x.url)||chapterNumber(x.title);return no&&oldNo===no&&sameStoryUrl(x.url,url)})}
 function maxKnownChapter(url){let max=0;for(const b of lib){if(!bookMatchesStory(b,url))continue;for(const c of b.chapters||[]){const n=chapterNumber(c.sourceUrl)||chapterNumber(c.title);if(n)max=Math.max(max,n)}}for(const x of imports){if(x.url&&sameStoryUrl(x.url,url)){const n=chapterNumber(x.url)||chapterNumber(x.title);if(n)max=Math.max(max,n)}}return max}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib));return true}catch(e){say('libraryStatus','Chưa lưu được: bộ nhớ trình duyệt có thể đầy. Hãy xuất bản sao hoặc xóa bớt truyện.');return false}}
+const LIB_DB='goc_nghe_truyen_library_db_v1';
+let libraryDb=null,libraryReady=false,libraryStorageFailed=false,libraryWriteTimer=null,libraryWriteQueue=Promise.resolve(),libraryPending=false;
+function openLibraryDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('Safari không hỗ trợ IndexedDB.'));return}const req=indexedDB.open(LIB_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('library'))req.result.createObjectStore('library')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+function readLibraryDB(db){return new Promise((resolve,reject)=>{const tx=db.transaction('library','readonly'),req=tx.objectStore('library').get('current');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+function writeLibraryDB(db,data){return new Promise((resolve,reject)=>{const tx=db.transaction('library','readwrite');tx.objectStore('library').put(data,'current');tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('Không ghi được thư viện'));tx.onabort=()=>reject(tx.error||Error('Lưu thư viện bị gián đoạn'))})}
+async function saveLibraryNow(){if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null}if(!libraryReady||!libraryDb){try{localStorage.setItem(KEY,JSON.stringify(lib));return true}catch(e){say('libraryStatus','Bộ nhớ Safari đã đầy và IndexedDB chưa sẵn sàng. Dữ liệu đang hiển thị chưa được xác nhận lưu.');return false}}const snapshot=JSON.parse(JSON.stringify(lib));libraryWriteQueue=libraryWriteQueue.catch(()=>{}).then(()=>writeLibraryDB(libraryDb,snapshot));try{await libraryWriteQueue;return true}catch(e){try{localStorage.setItem(KEY,JSON.stringify(lib));return true}catch(x){say('libraryStatus','Không ghi được thư viện vào bộ nhớ Safari. Hãy xuất EPUB các truyện quan trọng; bản nháp nhập chương vẫn được giữ nếu chưa lưu thành công.');return false}}}
+function persist(){if(!libraryReady){libraryPending=true;return true}if(libraryWriteTimer)clearTimeout(libraryWriteTimer);libraryWriteTimer=setTimeout(()=>{libraryWriteTimer=null;saveLibraryNow()},300);return true}
+async function initLibraryStorage(){try{libraryDb=await openLibraryDB();const saved=await readLibraryDB(libraryDb);if(Array.isArray(saved)){lib=saved}else{let legacy=[];try{const raw=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(raw))legacy=raw}catch(e){}if(legacy.length){lib=legacy;await writeLibraryDB(libraryDb,legacy)}else lib=legacy}libraryReady=true;bid=lib[0]?.id||'';cid=lib[0]?.chapters?.[0]?.id||'';render();restoreDraft();if(libraryPending){libraryPending=false;persist()}say('libraryStatus',saved?'Đã mở thư viện từ bộ nhớ mở rộng.':(lib.length?'Đã chuyển thư viện cũ sang bộ nhớ mở rộng.':'Thư viện sẵn sàng.'))}catch(e){libraryReady=false;libraryStorageFailed=true;try{const raw=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(raw))lib=raw}catch(x){}bid=lib[0]?.id||'';cid=lib[0]?.chapters?.[0]?.id||'';render();restoreDraft();say('libraryStatus','Safari chưa mở được bộ nhớ mở rộng; thư viện cũ vẫn được giữ, nhưng dung lượng lưu có thể còn hạn chế.')}} 
+window.addEventListener('pagehide',()=>{if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null;saveLibraryNow()}});
 const DRAFT_DB='goc_nghe_truyen_import_draft_v1';
 function openDraftDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('Trình duyệt không hỗ trợ lưu bản nháp.'));return}const req=indexedDB.open(DRAFT_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function writeDraft(){const db=await openDraftDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put({storyUrl:$('storyUrl').value,urls:$('urls').value,imports},'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
@@ -288,7 +296,7 @@ $('exportCollected').onclick=()=>{
  const cs=centrals.reduce((a,c)=>a+c.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cs,true);ev.setUint32(16,offset,true);
  const blob=new Blob([...locals,...centrals,end],{type:'application/epub+zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(title.replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'truyen-da-gom')+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);say('importStatus','Đã tạo EPUB gồm '+ch.length+' chương lấy thành công. Hãy chọn Lưu vào Tệp trên iPhone.');
 };
-$('saveImports').onclick=()=>{
+$('saveImports').onclick=async()=>{
  const ready=imports.filter(x=>x.ok);
  if(!ready.length){say('importStatus','Chưa có nội dung lấy thành công để lưu.');return}
  let target=book();
@@ -308,7 +316,7 @@ $('saveImports').onclick=()=>{
  }
  if(!added){say('importStatus','Không có chương mới để lưu. App đã phát hiện và bỏ qua '+duplicates+' chương trùng; bản nháp vẫn được giữ.');return}
  cid=target.chapters[target.chapters.length-1]?.id||'';
- if(!persist()){say('importStatus','Lưu thất bại nên nội dung vẫn được giữ ở phần kết quả để ông thử lại.');return}
+ persist();if(!await saveLibraryNow()){say('importStatus','Chưa xác nhận lưu được vào thư viện. Bản nháp vẫn được giữ; ông đừng tải lại trang lúc này.');return}
  render();showTab('librarySection');
  say('libraryStatus','Đã lưu '+added+' chương mới vào “'+target.title+'”. Bỏ qua '+duplicates+' chương trùng.');
  say('importStatus','Đã lưu '+added+' chương mới; tự bỏ qua '+duplicates+' chương đã có trong thư viện.');
@@ -363,8 +371,7 @@ function exportEpub(){
  a.href=url;a.download=filename+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
  say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
 }
-function exportLibrary(){const blob=new Blob([JSON.stringify({library:lib},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='goc-nghe-truyen.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$('exportEpub').onclick=exportEpub;$('export').onclick=exportLibrary;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
+$('exportLibraryEpub').onclick=exportEpub;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
  playerSection:['importSection','playerSection'],
  librarySection:['librarySection'],
@@ -378,8 +385,7 @@ function showTab(target){
  window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>showTab(b.dataset.target));
-render();
-restoreDraft();
+initLibraryStorage();
 $('searchBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('books').focus(),250)};$('settingsBtn').onclick=()=>showTab('settingsSection');
 })();
 </script><script>if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
