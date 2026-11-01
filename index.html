@@ -75,11 +75,19 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id), KEY='goc_nghe_truyen_library_v1', SK='goc_nghe_truyen_speed_v2', VK='goc_nghe_truyen_voice_v2';
-let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,imports=[],timerId=null,deadline=0,history=[],chunkElapsed=0,chunkStartedAt=0,progressTimer=null;
+let lib=[],bid='',cid='',voices=[],chunks=[],pos=0,playing=false,paused=false,session=0,imports=[],skippedCount=0,timerId=null,deadline=0,history=[],chunkElapsed=0,chunkStartedAt=0,progressTimer=null;
 let audioPlayer=new Audio(),standbyPlayer=new Audio();audioPlayer.preload='auto';standbyPlayer.preload='auto';let audioMode=true,audioFailed=false;
 try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(saved))lib=saved;history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]');bid=lib[0]?.id||'';cid=lib[0]?.chapters?.[0]?.id||''}catch(e){lib=[];history=[]}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
+function normalizedSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function storySlugFromUrl(value){try{const u=new URL(value);let p=decodeURIComponent(u.pathname).replace(/\.html?$/i,'').replace(/\/(?:chuong|chapter|chap|tap|phan)\/\d+(?:\/\d+)?\/?$/i,'').replace(/(?:[-_/])(?:chuong|chapter|chap|tap|phan)[-_ ]?\d+(?:[-_]\d+)?$/i,'');return normalizedSlug(p.split('/').filter(Boolean).pop()||'')}catch(e){return ''}}
+function chapterNumber(value){const raw=String(value||'');let p=raw;try{p=decodeURIComponent(new URL(raw).pathname)}catch(e){}const m=p.match(/(?:chuong|chapter|chap|tap|phan)[-_ ]?(\d{1,7})/i)||raw.match(/(?:chuong|chapter|chap|tap|phan)\s*[-:#]?\s*(\d{1,7})/i);return m?Number(m[1]):null}
+function sameStoryUrl(a,b){try{const x=new URL(a),y=new URL(b);const hx=x.hostname.replace(/^www\./i,''),hy=y.hostname.replace(/^www\./i,'');return hx===hy&&storySlugFromUrl(a)!==''&&storySlugFromUrl(a)===storySlugFromUrl(b)}catch(e){return false}}
+function bookMatchesStory(b,url){const slug=storySlugFromUrl(url);if(slug&&normalizedSlug(b.title)===slug)return true;return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url))}
+function isAlreadySaved(url,title=''){for(const b of lib){if((b.chapters||[]).some(c=>c.sourceUrl===url))return true}const no=chapterNumber(url)||chapterNumber(title);if(!no)return false;for(const b of lib){if(!bookMatchesStory(b,url))continue;if((b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url)&&((chapterNumber(c.sourceUrl)||chapterNumber(c.title))===no)))return true;if((b.chapters||[]).some(c=>!c.sourceUrl&&chapterNumber(c.title)===no&&normalizedSlug(b.title)===storySlugFromUrl(url)))return true}return false}
+function isAlreadyImported(url){const no=chapterNumber(url);return imports.some(x=>{if(x.url===url)return true;const oldNo=chapterNumber(x.url)||chapterNumber(x.title);return no&&oldNo===no&&sameStoryUrl(x.url,url)})}
+function maxKnownChapter(url){let max=0;for(const b of lib){if(!bookMatchesStory(b,url))continue;for(const c of b.chapters||[]){const n=chapterNumber(c.sourceUrl)||chapterNumber(c.title);if(n)max=Math.max(max,n)}}for(const x of imports){if(x.url&&sameStoryUrl(x.url,url)){const n=chapterNumber(x.url)||chapterNumber(x.title);if(n)max=Math.max(max,n)}}return max}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(lib));return true}catch(e){say('libraryStatus','Chưa lưu được: bộ nhớ trình duyệt có thể đầy. Hãy xuất bản sao hoặc xóa bớt truyện.');return false}}
 const DRAFT_DB='goc_nghe_truyen_import_draft_v1';
 function openDraftDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('Trình duyệt không hỗ trợ lưu bản nháp.'));return}const req=indexedDB.open(DRAFT_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
@@ -147,8 +155,34 @@ return cleaned.join('\n').replace(/\n{3,}/g,'\n\n').trim()
 function explainFetchError(status,raw){const t=raw.toLowerCase();if(status===401||status===403)return 'Trang truyện chặn truy cập tự động (HTTP '+status+').';if(status===404)return 'Không tìm thấy trang (404). Kiểm tra lại link.';if(status===429)return 'Dịch vụ đọc trang đang quá tải (429). Chờ một chút rồi thử lại.';if(status>=500)return 'Dịch vụ đọc trang đang gặp sự cố (HTTP '+status+').';if(/captcha|verify you are human|cloudflare ray id|access denied/.test(t))return 'Trang truyện yêu cầu xác minh hoặc chặn truy cập tự động.';return 'Không lấy được nội dung (HTTP '+status+').'}
 async function readerRequest(value,timeoutMs=35000){const url=normalizeStoryUrl(value);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);try{return await fetch('https://r.jina.ai/'+url,{method:'GET',headers:{Accept:'text/plain'},signal:controller.signal,cache:'no-store',credentials:'omit',mode:'cors'})}finally{clearTimeout(timer)}}
 async function readUrl(value){const url=normalizeStoryUrl(value);let lastError='Không trích xuất được nội dung';for(let attempt=0;attempt<3;attempt++){try{const response=await readerRequest(url,35000);const raw=await response.text();if(!response.ok){const preview=raw.replace(/\\s+/g,' ').trim().slice(0,160);lastError=explainFetchError(response.status,raw)+(preview?' Phản hồi dịch vụ: '+preview:'');if([400,401,403,404,410].includes(response.status))break;if(attempt<2)await sleep(700*(attempt+1));continue}if(/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(raw)){lastError='Website trả về trang xác minh bảo mật thay vì nội dung chương. Hãy mở link bằng Safari; nếu đọc được, sao chép nội dung chương rồi dán vào ô nhập thủ công bên dưới. App không thể tự vượt lớp bảo vệ của website.';break}const text=cleanReaderText(raw);const titleMatch=raw.match(/^Title:\\s*(.+)$/mi);if(text.length<120||/no content available|failed to retrieve|internal server error|please enable javascript/i.test(text.slice(0,700))){const preview=raw.replace(/\\s+/g,' ').trim().slice(0,160);lastError='Dịch vụ đọc trang trả về quá ít nội dung.'+(preview?' Phản hồi: '+preview:' Phản hồi trống.');if(attempt<2)await sleep(500);continue}return {url,title:titleMatch?.[1]?.trim()||(new URL(url).pathname.split('/').filter(Boolean).pop()||'Chương').replace(/[-_]/g,' '),text,ok:true,source:'Jina Reader'}}catch(e){lastError=e.name==='AbortError'?'Hết thời gian chờ khi lấy trang.':(/Failed to fetch|NetworkError|Load failed/i.test(e.message||'')?'Trình duyệt không kết nối được dịch vụ đọc trang (có thể do CORS hoặc mạng).':(e.message||'Lỗi kết nối dịch vụ đọc trang.'));if(attempt<2)await sleep(700*(attempt+1))}}throw Error(lastError)}
-function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errCount',imports.filter(x=>!x.ok).length);say('waitCount',0);say('skipCount',0);say('resultCount',imports.length);$('exportCollected').disabled=!imports.some(x=>x.ok&&String(x.text||'').trim());$('importResults').innerHTML=imports.map((x,i)=>'<div class="result"><strong>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+esc(x.title)+'</strong><span class="muted">'+esc(x.ok?x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.source||'Đã lấy'):x.error)+'</span>'+(x.ok?'<label>Tên chương</label><input type="text" data-title="'+i+'" value="'+esc(x.title)+'"><label>Nội dung xem trước</label><textarea data-text="'+i+'">'+esc(x.text)+'</textarea>':'')+'</div>').join('');$('saveImports').disabled=!imports.some(x=>x.ok)}
-$('fetch').onclick=async()=>{const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);const urls=[...new Set(rawUrls)].slice(0,200);if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}const done=new Set(imports.map(x=>x.url));const pending=urls.filter(u=>!done.has(u)).slice(0,20);if(!pending.length){say('importStatus','Các link trong danh sách đã được xử lý. Ông có thể lưu hoặc xuất EPUB.');return}$('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;try{for(let i=0;i<pending.length;i++){say('waitCount',pending.length-i);say('importStatus','Đang lấy '+(i+1)+'/'+pending.length+' chương của lượt này. Đã có '+imports.filter(x=>x.ok).length+' chương trong bản nháp.');let item;try{item=await readUrl(pending[i])}catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}imports.push(item);try{await writeDraft();saved++}catch(e){say('importStatus','Không lưu được bản nháp tự động. Dừng để tránh mất thêm dữ liệu; ông hãy lưu các chương đang hiện.');renderImports();break}renderImports();if(i<pending.length-1)await sleep(450)}}finally{$('fetch').disabled=false;say('waitCount',0);const remaining=urls.filter(u=>!imports.some(x=>x.url===u));say('importStatus','Đã xử lý thêm '+saved+' chương. Bản nháp đã tự lưu '+imports.filter(x=>x.ok).length+' chương thành công. '+(remaining.length?'Còn '+remaining.length+' link; bấm Lấy nội dung chương lần nữa để tiếp tục.':'Đã hết link trong danh sách.'))}}
+function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errCount',imports.filter(x=>!x.ok).length);say('waitCount',0);say('skipCount',skippedCount);say('resultCount',imports.length);$('exportCollected').disabled=!imports.some(x=>x.ok&&String(x.text||'').trim());$('importResults').innerHTML=imports.map((x,i)=>'<div class="result"><strong>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+esc(x.title)+'</strong><span class="muted">'+esc(x.ok?x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.source||'Đã lấy'):x.error)+'</span>'+(x.ok?'<label>Tên chương</label><input type="text" data-title="'+i+'" value="'+esc(x.title)+'"><label>Nội dung xem trước</label><textarea data-text="'+i+'">'+esc(x.text)+'</textarea>':'')+'</div>').join('');$('saveImports').disabled=!imports.some(x=>x.ok)}
+$('fetch').onclick=async()=>{
+ const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
+ const urls=[...new Set(rawUrls)].slice(0,200);
+ if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}
+ const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+ skippedCount=urls.length-pendingAll.length;renderImports();
+ const pending=pendingAll.slice(0,20);
+ if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp. Không còn chương mới trong danh sách này.');return}
+ $('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;
+ try{
+  for(let i=0;i<pending.length;i++){
+   say('waitCount',pending.length-i);
+   say('importStatus','Đang lấy '+(i+1)+'/'+pending.length+' chương của lượt này. Tự bỏ qua '+skippedCount+' chương đã có.');
+   let item;
+   try{item=await readUrl(pending[i])}
+   catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
+   imports.push(item);
+   try{await writeDraft();saved++}
+   catch(e){say('importStatus','Không lưu được bản nháp tự động. Dừng để tránh mất thêm dữ liệu; ông hãy lưu các chương đang hiện.');renderImports();break}
+   renderImports();if(i<pending.length-1)await sleep(450)
+  }
+ }finally{
+  $('fetch').disabled=false;say('waitCount',0);
+  const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+  say('importStatus','Đã xử lý thêm '+saved+' chương. Bản nháp có '+imports.filter(x=>x.ok).length+' chương thành công; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới; bấm Lấy nội dung chương lần nữa để tiếp tục.':'Đã hết link mới trong danh sách.'))
+ }
+}
 $('discover').onclick=async()=>{
  let url;
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
@@ -214,7 +248,9 @@ $('discover').onclick=async()=>{
   if(verified){
    const first=Math.min(...verified.map(x=>x.number));
    const template=verified[0];
-   for(let n=first;n<first+200;n++){
+   const knownMax=maxKnownChapter(url.href);
+   const startAt=knownMax>=first?knownMax+1:first;
+   for(let n=startAt;n<startAt+200;n++){
     const id=n+template.offset;
     if(!Number.isSafeInteger(id)||id<0)continue;
     const path=template.prefix+template.word+template.sep1+n+template.sep2+id+template.ext;
@@ -222,10 +258,14 @@ $('discover').onclick=async()=>{
     if(!found.has(candidate)){found.add(candidate);generated++}
    }
   }
-  const result=[...found].slice(0,200).sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
-  if(!result.length)throw Error('Chưa tìm thấy link chương. Có thể website dùng cấu trúc phân trang khác hoặc chặn dịch vụ đọc trang.');
+  const allResults=[...found].sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
+  const freshResults=allResults.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+  skippedCount=allResults.length-freshResults.length;
+  const result=freshResults.slice(0,200);
   $('urls').value=result.join('\n');
-  say('importStatus','Đã đọc '+seenPages.size+' trang danh sách, tìm thấy '+patternRows.length+' link có dạng chương và tự tạo thêm '+generated+' link ứng viên'+(verified?' theo mẫu URL đã đối chiếu từ ít nhất 3 chương.':' . Chưa đủ dữ liệu để xác nhận mẫu URL, dùng link tìm được như trước.')+' Bấm Lấy nội dung để kiểm tra link và nội dung thực tế.');
+  if(!result.length){say('importStatus','Đã tìm thấy link nhưng tất cả đều là chương đã có. App tự bỏ qua '+skippedCount+' link trùng.');renderImports();return}
+  say('skipCount',skippedCount);
+  say('importStatus','Đã đọc '+seenPages.size+' trang danh sách, tìm thấy '+patternRows.length+' link có dạng chương và tự tạo thêm '+generated+' link ứng viên. Tự bỏ qua '+skippedCount+' chương đã có; còn '+result.length+' link mới. Bấm Lấy nội dung để bắt đầu.');
  }catch(e){say('importStatus',e.message||'Không tìm thấy link chương.')}
  finally{$('discover').disabled=false}
 }
@@ -248,7 +288,32 @@ $('exportCollected').onclick=()=>{
  const cs=centrals.reduce((a,c)=>a+c.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cs,true);ev.setUint32(16,offset,true);
  const blob=new Blob([...locals,...centrals,end],{type:'application/epub+zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(title.replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'truyen-da-gom')+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);say('importStatus','Đã tạo EPUB gồm '+ch.length+' chương lấy thành công. Hãy chọn Lưu vào Tệp trên iPhone.');
 };
-$('saveImports').onclick=()=>{const ready=imports.filter(x=>x.ok);if(!ready.length){say('importStatus','Chưa có nội dung lấy thành công để lưu.');return}let target=book();if(!target){const rawName=$('storyUrl').value.trim();let guessed='';try{guessed=new URL(rawName).pathname.split('/').filter(Boolean).pop()||''}catch(e){}const title=(guessed||ready[0].title||'Truyện mới').replace(/[-_]+/g,' ').replace(/\b(chương|chuong|chapter)\s*\d+.*$/i,'').trim()||'Truyện mới';target={id:uid(),title,chapters:[]};lib.push(target);bid=target.id;cid=''}let added=0;for(const x of ready){const index=imports.indexOf(x),ti=document.querySelector('[data-title="'+index+'"]'),tx=document.querySelector('[data-text="'+index+'"]');const chapterTitle=ti?.value.trim()||x.title;const body=tx?.value??x.text;if(!body.trim())continue;target.chapters.push({id:uid(),title:chapterTitle,text:body,pos:0,sourceUrl:x.url});added++}if(!added){say('importStatus','Không có nội dung hợp lệ để lưu.');return}cid=target.chapters[target.chapters.length-1]?.id||'';if(!persist()){say('importStatus','Lưu thất bại nên nội dung vẫn được giữ ở phần kết quả để ông thử lại.');return}render();showTab('librarySection');say('libraryStatus','Đã lưu '+added+' chương vào “'+target.title+'”. Chọn chương trong danh sách để nghe hoặc sửa.');say('importStatus','Đã lưu thành công '+added+' chương vào thư viện.');imports=[];clearDraft();renderImports()}
+$('saveImports').onclick=()=>{
+ const ready=imports.filter(x=>x.ok);
+ if(!ready.length){say('importStatus','Chưa có nội dung lấy thành công để lưu.');return}
+ let target=book();
+ if(!target){
+  const rawName=$('storyUrl').value.trim();let guessed='';
+  try{guessed=new URL(rawName).pathname.split('/').filter(Boolean).pop()||''}catch(e){}
+  const title=(guessed||ready[0].title||'Truyện mới').replace(/[-_]+/g,' ').replace(/\b(chương|chuong|chapter)\s*\d+.*$/i,'').trim()||'Truyện mới';
+  target={id:uid(),title,chapters:[]};lib.push(target);bid=target.id;cid=''
+ }
+ let added=0,duplicates=0;
+ for(const x of ready){
+  const index=imports.indexOf(x),ti=document.querySelector('[data-title="'+index+'"]'),tx=document.querySelector('[data-text="'+index+'"]');
+  const chapterTitle=ti?.value.trim()||x.title,body=tx?.value??x.text;
+  if(!body.trim())continue;
+  if(isAlreadySaved(x.url,chapterTitle)){duplicates++;continue}
+  target.chapters.push({id:uid(),title:chapterTitle,text:body,pos:0,sourceUrl:x.url});added++;
+ }
+ if(!added){say('importStatus','Không có chương mới để lưu. App đã phát hiện và bỏ qua '+duplicates+' chương trùng; bản nháp vẫn được giữ.');return}
+ cid=target.chapters[target.chapters.length-1]?.id||'';
+ if(!persist()){say('importStatus','Lưu thất bại nên nội dung vẫn được giữ ở phần kết quả để ông thử lại.');return}
+ render();showTab('librarySection');
+ say('libraryStatus','Đã lưu '+added+' chương mới vào “'+target.title+'”. Bỏ qua '+duplicates+' chương trùng.');
+ say('importStatus','Đã lưu '+added+' chương mới; tự bỏ qua '+duplicates+' chương đã có trong thư viện.');
+ imports=[];skippedCount=duplicates;clearDraft();renderImports()
+}
 $('books').onchange=()=>{bid=$('books').value;cid='';stop('Đã chuyển bộ truyện.');render()};$('chapters').onchange=()=>{cid=$('chapters').value;stop('Đã chuyển chương.');render()};
 $('addBook').onclick=newBook;$('addChapter').onclick=newChapter;
 $('renameBook').onclick=()=>{if(!book())return;const n=prompt('Tên bộ truyện:',book().title);if(n?.trim()){book().title=n.trim();persist();render()}};
