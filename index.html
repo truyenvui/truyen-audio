@@ -187,10 +187,39 @@ $('discover').onclick=async()=>{
    if(found.size>=200)break;
    await sleep(250);
   }
+  // Nhận diện mẫu URL có mã số tăng đều từ ít nhất 3 link chương thật.
+  // Chỉ tạo URL ứng viên khi cùng một mẫu đường dẫn và cùng độ lệch đã được xác nhận.
+  const patternRows=[...found].map(href=>{
+   try{
+    const u=new URL(href),p=decodeURIComponent(u.pathname);
+    const m=p.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)([-_])(\d+)(\.html?)?$/i);
+    if(!m)return null;
+    return {href,u,prefix:m[1],word:m[2],sep1:m[3],number:Number(m[4]),sep2:m[5],id:Number(m[6]),ext:m[7]||'',offset:Number(m[6])-Number(m[4])};
+   }catch{return null}
+  }).filter(Boolean);
+  const groups=new Map();
+  for(const row of patternRows){
+   const key=[row.u.origin,row.prefix,row.word.toLowerCase(),row.sep1,row.sep2,row.ext,row.offset].join('|');
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push(row);
+  }
+  const verified=[...groups.values()].filter(rows=>new Set(rows.map(x=>x.number)).size>=3).sort((a,b)=>b.length-a.length)[0];
+  let generated=0;
+  if(verified){
+   const first=Math.min(...verified.map(x=>x.number));
+   const template=verified[0];
+   for(let n=first;n<first+200;n++){
+    const id=n+template.offset;
+    if(!Number.isSafeInteger(id)||id<0)continue;
+    const path=template.prefix+template.word+template.sep1+n+template.sep2+id+template.ext;
+    const candidate=new URL(path,template.u.origin).href;
+    if(!found.has(candidate)){found.add(candidate);generated++}
+   }
+  }
   const result=[...found].slice(0,200).sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
   if(!result.length)throw Error('Chưa tìm thấy link chương. Có thể website dùng cấu trúc phân trang khác hoặc chặn dịch vụ đọc trang.');
   $('urls').value=result.join('\n');
-  say('importStatus','Đã đọc '+seenPages.size+' trang danh sách và tìm thấy '+result.length+' link chương (tối đa 200). Bấm Lấy nội dung để tiếp tục.');
+  say('importStatus','Đã đọc '+seenPages.size+' trang danh sách, tìm thấy '+patternRows.length+' link có dạng chương và tự tạo thêm '+generated+' link ứng viên'+(verified?' theo mẫu URL đã đối chiếu từ ít nhất 3 chương.':' . Chưa đủ dữ liệu để xác nhận mẫu URL, dùng link tìm được như trước.')+' Bấm Lấy nội dung để kiểm tra link và nội dung thực tế.');
  }catch(e){say('importStatus',e.message||'Không tìm thấy link chương.')}
  finally{$('discover').disabled=false}
 }
