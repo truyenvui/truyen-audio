@@ -341,22 +341,9 @@ $('refreshVoices').onclick=loadVoices;if('speechSynthesis'in window){loadVoices(
 $('testVoice').onclick=()=>{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('Xin chào ông, mình cùng thư giãn và nghe truyện nhé.');const v=chosen();u.lang=v?.lang||'vi-VN';if(v)u.voice=v;u.rate=Math.max(.6,Math.min(2,+$('speed').value||1.1));speechSynthesis.speak(u)};
 $('timerBtn').onclick=()=>{showTab('settingsSection');setTimeout(()=>$('timer').focus(),250)};$('chapterBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('chapters').focus(),250)};
 $('timer').onchange=()=>{clearInterval(timerId);timerId=null;const n=+$('timer').value;deadline=n?Date.now()+n*60000:0;if(deadline)timerId=setInterval(()=>{const left=deadline-Date.now();say('timerVal',left<=0?'Hết giờ':fmt(Math.ceil(left/1000)));if(left<=0){clearInterval(timerId);timerId=null;$('timer').value='0';stop('Hết giờ ngủ. Chúc ông ngủ ngon!');say('timerVal','Tắt')}},1000);say('timerVal',n?n+'p':'Tắt')};
-const validVietnameseTFinal=new Set(('bật bắt bạt bát bật bết biết biệt bít bệt bột bọt buột buốt bút cát cắt cất chát chất chật chốt chút chuột cột cốt cút đắt đất đợt đột đút gạt gắt gật gót gột gọt hát hạt hất hết hệt hít hót hút khát khất khít khọt lát lạt lật lết lệt lít lột lót mất mặt mật mát mắt mạt mệt mịt một mọt mút ngạt ngắt ngất nghệt nghịt ngọt ngột ngụt nhạt nhất nhặt nhét nhốt nhọt phát phạt phất phật phết phệt phớt quát quắt quất quật quýt rát rặt rít rốt rột sát sạt sắt sất sệt sịt sốt sột sút tạt tắt tất tật tết tịt tốt tột tụt thật kết viết giết tiết liệt kiệt miệt diệt triệt nhiệt thiết thịt thất thụt đạt đặt đốt vật vạt vắt vất vẹt vệt vít vọt vút xát xắt xịt xót xột xuýt').split(' '));
-let cleanedTrailingTCount=0;
-function cleanExtraTrailingT(value){
- return String(value??'').replace(/([\p{L}\p{M}]+)([^\p{L}\p{M}\s]*)/gu,(whole,word,punctuation)=>{
-  if(!/t$/i.test(word))return whole;
-  const lower=word.toLocaleLowerCase('vi');
-  if(lower.endsWith('tt')){cleanedTrailingTCount++;return word.slice(0,-1)+punctuation}
-  if(validVietnameseTFinal.has(lower))return whole;
-  const base=lower.slice(0,-1);
-  if(validVietnameseTFinal.has(base))return base+punctuation;
-  cleanedTrailingTCount++;return word.slice(0,-1)+punctuation;
- });
-}
 function exportEpub(){
  const b=book();if(!b){say('libraryStatus','Ông hãy chọn hoặc tạo bộ truyện trước nhé.');return}
- cleanedTrailingTCount=0;const chapters=(b.chapters||[]).filter(c=>String(c.text||'').trim()).map(c=>({...c,text:cleanExtraTrailingT(c.text)}));
+ const chapters=(b.chapters||[]).filter(c=>String(c.text||'').trim()).map(c=>({...c}));
  if(!chapters.length){say('libraryStatus','Bộ truyện này chưa có chương có nội dung để xuất.');return}
  const xml=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
  const xhtml=(c,i)=>'<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi" xml:lang="vi"><head><title>'+xml(c.title||('Chương '+(i+1)))+'</title><meta charset="utf-8"/><style>body{font-family:serif;line-height:1.7;margin:5%;}h1{text-align:center;font-size:1.5em;margin:1em 0 2em;}p{margin:0 0 1em;white-space:pre-wrap;}</style></head><body><h1>'+xml(c.title||('Chương '+(i+1)))+'</h1>'+String(c.text||'').split(/\n\s*\n/).map(p=>'<p>'+xml(p).replace(/\n/g,'<br/>')+'</p>').join('')+'</body></html>';
@@ -382,7 +369,7 @@ function exportEpub(){
  const blob=new Blob([...chunksOut,...central,end],{type:'application/epub+zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  const filename=(b.title||'goc-nghe-truyen').replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'goc-nghe-truyen';
  a.href=url;a.download=filename+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
- say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương; tự sửa '+cleanedTrailingTCount+' chữ t thừa. Thư viện gốc không bị thay đổi. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
+ say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương. Nội dung thư viện được giữ nguyên. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
 }
 $('exportLibraryEpub').onclick=exportEpub;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
