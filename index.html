@@ -35,7 +35,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <label for="storyUrl">Link trang truyện</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link truyện vào đây...">
-<div class="actions"><button class="primary" id="discover">✧ Tìm link chương</button></div>
+<div class="actions"><button class="primary" id="discover">✧ Tìm link chương</button></div><div class="actions"><button id="makeNumberedLinks" type="button">Tự tạo link theo số trang (không dò)</button></div>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
@@ -279,6 +279,20 @@ $('fetch').onclick=async()=>{
   say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
+$('makeNumberedLinks').onclick=()=>{
+ let base;
+ try{base=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Dán link trang truyện hợp lệ trước nhé.');return}
+ const max=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'1',10)||1));
+ let path=decodeURIComponent(base.pathname).replace(/\/+$/,'');
+ if(/\/\d{1,4}$/.test(path))path=path.replace(/\/\d{1,4}$/,'');
+ const root=base.origin+path+'/';
+ const links=[root,...Array.from({length:max-1},(_,i)=>root+(i+2)+'/')];
+ $('urls').value=links.join('\n');
+ say('importStatus','Đã tự tạo '+links.length+' link theo thứ tự trang 1 đến '+max+'. Không gửi yêu cầu dò website. Ông kiểm tra danh sách rồi bấm “Lấy nội dung chương”.');
+ $('importProgress').max=links.length;$('importProgress').value=0;
+ say('progressLabel','Đã tạo '+links.length+' link, chưa tải nội dung');
+ $('discoverHelp').classList.add('hidden');
+};
 $('discover').onclick=async()=>{
  let url;
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
