@@ -89,13 +89,77 @@ try{history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]')
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
 function normalizedSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
-function storySlugFromUrl(value){try{const u=new URL(value);let p=decodeURIComponent(u.pathname).replace(/\.html?$/i,'').replace(/\/(?:chuong|chapter|chap|tap|phan)\/\d+(?:\/\d+)?\/?$/i,'').replace(/(?:[-_/])(?:chuong|chapter|chap|tap|phan)[-_ ]?\d+(?:[-_]\d+)?$/i,'');return normalizedSlug(p.split('/').filter(Boolean).pop()||'')}catch(e){return ''}}
-function chapterNumber(value){const raw=String(value||''),plain=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');let p=plain;try{p=decodeURIComponent(new URL(raw).pathname)}catch(e){}const m=p.match(/(?:chuong|chapter|chap|tap|phan)[-_ ]?(\d{1,7})/i)||plain.match(/(?:chuong|chapter|chap|tap|phan)\s*[-:#]?\s*(\d{1,7})/i);return m?Number(m[1]):null}
-function sameStoryUrl(a,b){try{const x=new URL(a),y=new URL(b);const hx=x.hostname.replace(/^www\./i,''),hy=y.hostname.replace(/^www\./i,'');return hx===hy&&storySlugFromUrl(a)!==''&&storySlugFromUrl(a)===storySlugFromUrl(b)}catch(e){return false}}
-function bookMatchesStory(b,url){const slug=storySlugFromUrl(url);if(slug&&normalizedSlug(b.title)===slug)return true;return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url))}
-function isAlreadySaved(url,title=''){for(const b of lib){if((b.chapters||[]).some(c=>c.sourceUrl===url))return true}const no=chapterNumber(url)||chapterNumber(title);if(!no)return false;for(const b of lib){if(!bookMatchesStory(b,url))continue;if((b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url)&&((chapterNumber(c.sourceUrl)||chapterNumber(c.title))===no)))return true;if((b.chapters||[]).some(c=>!c.sourceUrl&&chapterNumber(c.title)===no&&normalizedSlug(b.title)===storySlugFromUrl(url)))return true}return false}
-function isAlreadyImported(url){const no=chapterNumber(url);return imports.some(x=>{if(!x.ok)return false;if(x.url===url)return true;const oldNo=chapterNumber(x.url)||chapterNumber(x.title);return no&&oldNo===no&&sameStoryUrl(x.url,url)})}
-function maxKnownChapter(url){let max=0;for(const b of lib){if(!bookMatchesStory(b,url))continue;for(const c of b.chapters||[]){const n=chapterNumber(c.sourceUrl)||chapterNumber(c.title);if(n)max=Math.max(max,n)}}for(const x of imports){if(x.url&&sameStoryUrl(x.url,url)){const n=chapterNumber(x.url)||chapterNumber(x.title);if(n)max=Math.max(max,n)}}return max}
+function storySlugFromUrl(value){
+ try{
+  const u=new URL(value),parts=decodeURIComponent(u.pathname).replace(/\.html?$/i,'').split('/').filter(Boolean);
+  const generic=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
+  const chapterTail=/^(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i;
+  while(parts.length&&(/^\d+$/.test(parts[parts.length-1])||chapterTail.test(parts[parts.length-1])||generic.has(normalizedSlug(parts[parts.length-1]))))parts.pop();
+  if(!parts.length)return '';
+  const last=parts[parts.length-1].replace(/(?:[-_/])(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i,'');
+  if(!last||generic.has(normalizedSlug(last)))return '';
+  return normalizedSlug(last);
+ }catch(e){return ''}
+}
+function chapterNumber(value){
+ const raw=String(value||''),plain=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ try{
+  const u=new URL(raw),p=decodeURIComponent(u.pathname);
+  const m=p.match(/(?:chuong|chapter|chap|episode|ep|tap|phan)[-_ ]?(\d{1,7})/i);
+  if(m)return Number(m[1]);
+  for(const [k,v] of u.searchParams)if(/^(?:chapter|chap|chuong|episode|ep|tap|chapter_no|chapter_num)$/i.test(k)&&/^\d{1,7}$/.test(v))return Number(v);
+ }catch(e){}
+ const m=plain.match(/(?:chuong|chapter|chap|episode|ep|tap|phan)\s*[-:#]?[\s_]*(\d{1,7})/i);
+ return m?Number(m[1]):null
+}
+function sameStoryUrl(a,b){
+ try{
+  const x=new URL(a),y=new URL(b),host=u=>u.hostname.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
+  const sx=storySlugFromUrl(a),sy=storySlugFromUrl(b);
+  return host(x)===host(y)&&!!sx&&sx===sy;
+ }catch(e){return false}
+}
+function bookMatchesStory(b,url){
+ const slug=storySlugFromUrl(url);
+ if(!slug)return false;
+ if(normalizedSlug(b.title)===slug)return true;
+ return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url));
+}
+function isAlreadySaved(url,title=''){
+ let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
+ for(const b of lib)for(const c of b.chapters||[])if(c.sourceUrl){
+  let old='';try{const u=new URL(c.sourceUrl);u.hash='';old=u.href}catch(e){old=String(c.sourceUrl)}
+  if(old===canonical)return true;
+ }
+ const no=chapterNumber(url)||chapterNumber(title);
+ if(!no)return false;
+ for(const b of lib){
+  if(!bookMatchesStory(b,url))continue;
+  if((b.chapters||[]).some(c=>{
+   const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
+   if(oldNo!==no)return false;
+   return c.sourceUrl?sameStoryUrl(c.sourceUrl,url):normalizedSlug(b.title)===storySlugFromUrl(url);
+  }))return true;
+ }
+ return false;
+}
+function isAlreadyImported(url){
+ let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
+ const no=chapterNumber(url);
+ return imports.some(x=>{
+  if(!x.ok)return false;
+  let old='';try{const u=new URL(x.url);u.hash='';old=u.href}catch(e){old=String(x.url||'')}
+  if(old===canonical)return true;
+  const oldNo=chapterNumber(x.url)||chapterNumber(x.title);
+  return !!no&&oldNo===no&&sameStoryUrl(x.url,url);
+ });
+}
+function maxKnownChapter(url){
+ let max=0;
+ for(const b of lib){if(!bookMatchesStory(b,url))continue;for(const c of b.chapters||[]){const n=chapterNumber(c.sourceUrl)||chapterNumber(c.title);if(n)max=Math.max(max,n)}}
+ for(const x of imports){if(x.url&&sameStoryUrl(x.url,url)){const n=chapterNumber(x.url)||chapterNumber(x.title);if(n)max=Math.max(max,n)}}
+ return max;
+}
 const LIB_DB='goc_nghe_truyen_library_db_v1';
 let libraryDb=null,libraryReady=false,libraryStorageFailed=false,libraryWriteTimer=null,libraryWriteQueue=Promise.resolve(),libraryPending=false;
 function openLibraryDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('Safari không hỗ trợ IndexedDB.'));return}const req=indexedDB.open(LIB_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('library'))req.result.createObjectStore('library')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
