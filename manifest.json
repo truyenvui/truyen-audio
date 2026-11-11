@@ -1,9 +1,8 @@
-
 {
   "id": "./",
-  "name": "Góc Nghe Truyện",
-  "short_name": "Nghe Truyện",
-  "description": "Góc riêng để nghe những câu chuyện yêu thích",
+  "name": "Góc Nghe Truyện – Thu thập truyện",
+  "short_name": "Góc Truyện",
+  "description": "Thu thập, quản lý và xuất truyện EPUB trên iPhone.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
