@@ -3,13 +3,16 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090a0c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Góc Nghe Truyện">
-<link rel="manifest" href="./manifest.json"><title>Góc Nghe Truyện</title>
+<link rel="manifest" href="./manifest.json"><title>Góc Nghe Truyện · Thu thập truyện</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0c;--panel:#131518;--panel2:#1b1e22;--text:#f5f5f3;--muted:#9b9da3;--gold:#f4c477;--line:#292c31;--green:#65d49a;--red:#ff827c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#181713 0,#090a0c 48%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
 button,input,select,textarea{font:inherit}button{cursor:pointer;min-height:44px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--text);padding:10px 13px;font-weight:650}button:disabled{opacity:.45;cursor:default}.primary{background:var(--gold);color:#20180c;border-color:var(--gold)}.iconbtn{width:44px;padding:0;font-size:19px}.danger{color:#ffaaa4}
 main{max-width:760px;margin:auto;padding:env(safe-area-inset-top) 16px calc(94px + env(safe-area-inset-bottom))}.top{display:flex;align-items:center;gap:12px;padding:22px 2px 18px}.brandicon{width:48px;height:48px;border-radius:16px;background:#292116;color:var(--gold);display:grid;place-items:center;font-size:25px}.brand{flex:1}.brand h1{font-size:23px;margin:0;letter-spacing:-.5px}.muted,.small{color:var(--muted)}.small{font-size:13px}.section{background:linear-gradient(145deg,#17191c,#111315);border:1px solid var(--line);border-radius:24px;padding:17px;margin-bottom:14px;box-shadow:0 10px 28px #0002}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionhead h2{font-size:17px;margin:0}.eyebrow{color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:1.3px;font-weight:800}
 label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=text],input[type=url],select,textarea{width:100%;border:1px solid #34373c;background:#0d0f11;color:var(--text);border-radius:14px;padding:12px;font-size:16px;outline:none}input:focus,textarea:focus,select:focus{border-color:#a78651}textarea{min-height:120px;resize:vertical;line-height:1.55}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions>*{flex:1}.status{font-size:13px;color:var(--gold);margin-top:10px;min-height:18px}.manual-links{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#0d0f11}.manual-links summary{font-size:13px;color:var(--muted);cursor:pointer}.savehint{font-size:12px;color:var(--muted);margin:10px 0 0}.importsummary{font-size:13px;color:var(--muted);margin:0 0 12px}.hidden{display:none!important}.tab-hidden{display:none!important}
+/* Story-collector mode: hide legacy audio UI while retaining its data handlers for compatibility. */
+#playerSection,#historySection,.audio-settings{display:none!important}
+.bottominner{grid-template-columns:repeat(3,1fr)!important}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}.stat{text-align:center;padding:9px 2px;background:#0c0e10;border:1px solid #22252a;border-radius:14px;font-size:12px;color:var(--muted)}.stat b{display:block;font-size:18px;color:var(--text);margin-bottom:3px}.stat.ok b{color:var(--green)}.stat.bad b{color:var(--red)}
 .result{padding:12px 0;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}.result:last-child{border-bottom:0}.result strong{display:block;font-size:14px;margin-bottom:4px}
 .selectrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.booklist{display:grid;gap:8px}.bookitem{display:flex;align-items:center;gap:12px;padding:12px;background:#0d0f11;border:1px solid var(--line);border-radius:16px}.bookcover{width:48px;height:58px;border-radius:12px;background:#292116;color:var(--gold);display:grid;place-items:center;font-size:22px;flex-shrink:0}.bookmeta{min-width:0;flex:1}.bookmeta b{display:block;overflow-wrap:anywhere}.bookmeta span{font-size:12px;color:var(--muted)}
@@ -23,10 +26,10 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </style>
 </head>
 <body><main>
-<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Nghe Truyện</h1><div class="small">Nghe mọi lúc, mọi nơi</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
+<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Nghe Truyện</h1><div class="small">Trình thu thập · quản lý · xuất EPUB</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
 
 <section class="section" id="importSection">
-<div class="sectionhead"><h2><span class="sectionicon">↗</span> Gom truyện & xuất EPUB</h2></div>
+<div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <label for="storyUrl">Link trang truyện</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link truyện vào đây...">
 <div class="actions"><button class="primary" id="discover">✧ Tìm link chương</button></div>
@@ -39,8 +42,8 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="savehint">Chỉ lưu khi ông bấm nút bên dưới.</div>
 <div class="actions"><button id="saveImports" disabled>Lưu vào thư viện</button><button id="exportCollected" disabled>Xuất EPUB</button></div>
 </section>
-<section class="statsbar"><div class="stat ok"><b><span>✓</span> <i id="okCount">0</i></b>Thành công</div><div class="stat bad"><b><span>×</span> <i id="errCount">0</i></b>Lỗi</div><div class="stat waiting"><b><span>◷</span> <i id="waitCount">0</i></b>Đang lấy</div><div class="stat skipped"><b><span>⊖</span> <i id="skipCount">0</i></b>Đã bỏ qua</div></section>
-<section class="section resultscard"><div class="sectionhead"><div><h2>▤ &nbsp; Kết quả (<span id="resultCount">0</span>)</h2><div class="small">Chưa có dữ liệu</div></div><span>›</span></div><div id="importResults"></div></section>
+<section class="statsbar" id="statsSection"><div class="stat ok"><b><span>✓</span> <i id="okCount">0</i></b>Thành công</div><div class="stat bad"><b><span>×</span> <i id="errCount">0</i></b>Lỗi</div><div class="stat waiting"><b><span>◷</span> <i id="waitCount">0</i></b>Đang lấy</div><div class="stat skipped"><b><span>⊖</span> <i id="skipCount">0</i></b>Đã bỏ qua</div></section>
+<section class="section resultscard" id="resultsSection"><div class="sectionhead"><div><h2>▤ &nbsp; Kết quả (<span id="resultCount">0</span>)</h2><div class="small">Chưa có dữ liệu</div></div><span>›</span></div><div id="importResults"></div></section>
 
 <section class="section player" id="playerSection">
 <div class="sectionhead"><h2>🎧 Đang nghe</h2><span class="pill">● TRÌNH PHÁT</span></div>
@@ -63,16 +66,16 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="actions"><button class="primary" id="saveChapter">Lưu chương</button><button id="deleteBook" class="danger">Xóa bộ truyện</button></div><div class="status" id="libraryStatus"></div>
 </section>
 <section class="section" id="historySection"><div class="sectionhead"><h2>◷ Lịch sử nghe</h2></div><p class="small">Lịch sử sẽ hiện các chương ông đã nghe gần đây.</p><div id="historyList" class="small">Chưa có lịch sử.</div></section>
-<section class="section" id="settingsSection"><div class="sectionhead"><h2>⚙️ Cài đặt nghe</h2></div>
-<label for="voice">Giọng Safari dùng khi nghe thử</label><select id="voice"><option value="">Tự chọn giọng Safari</option></select>
+<section class="section" id="settingsSection"><div class="sectionhead"><h2>⚙️ Công cụ thư viện</h2></div>
+<div class="audio-settings"><label for="voice">Giọng Safari dùng khi nghe thử</label><select id="voice"><option value="">Tự chọn giọng Safari</option></select>
 <div class="actions"><button id="refreshVoices">↻ Làm mới giọng</button><button id="testVoice">▶ Nghe thử</button></div>
 <label for="speed">Tốc độ đọc <b id="speedLabel" style="color:var(--gold)">1.1×</b></label><input id="speed" type="range" min=".6" max="2" step=".1" value="1.1">
 <label for="timer">Hẹn giờ ngủ</label><select id="timer"><option value="0">Không hẹn giờ</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="90">90 phút</option></select>
-<p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p>
-<p class="small">EPUB sẽ chứa toàn bộ chương có nội dung của bộ truyện đang chọn trong thư viện.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất EPUB từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+<p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p></div>
+<p class="small">Xuất EPUB từ bộ truyện đang chọn. Có thể nhập bản sao JSON để khôi phục thư viện đã sao lưu.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất EPUB từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
 </section></div>
 </main>
-<nav class="bottom"><div class="bottominner"><button class="nav active" data-target="playerSection"><span>♧</span>Nghe truyện</button><button class="nav" data-target="librarySection"><span>♧</span>Thư viện</button><button class="nav" data-target="historySection"><span>◷</span>Lịch sử</button><button class="nav" data-target="settingsSection"><span>♙</span>Cài đặt</button></div></nav>
+<nav class="bottom" aria-label="Điều hướng chính"><div class="bottominner"><button class="nav active" data-target="importSection"><span>⇩</span>Thu thập</button><button class="nav" data-target="librarySection"><span>▤</span>Thư viện</button><button class="nav" data-target="settingsSection"><span>⚙</span>Xuất & sao lưu</button></div></nav>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id), KEY='goc_nghe_truyen_library_v1', SK='goc_nghe_truyen_speed_v2', VK='goc_nghe_truyen_voice_v2';
@@ -382,19 +385,19 @@ function exportEpub(){
 }
 $('exportLibraryEpub').onclick=exportEpub;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
- playerSection:['importSection','playerSection'],
+ importSection:['importSection','statsSection','resultsSection'],
  librarySection:['librarySection'],
- historySection:['historySection'],
  settingsSection:['settingsSection']
 };
 function showTab(target){
  document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.target===target));
  const visible=new Set(tabGroups[target]||[target]);
- ['importSection','playerSection','librarySection','historySection','settingsSection'].forEach(id=>$(id).classList.toggle('tab-hidden',!visible.has(id)));
+ ['importSection','statsSection','resultsSection','playerSection','librarySection','historySection','settingsSection'].forEach(id=>$(id)?.classList.toggle('tab-hidden',!visible.has(id)));
  window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>showTab(b.dataset.target));
 initLibraryStorage();
+showTab('importSection');
 $('searchBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('books').focus(),250)};$('settingsBtn').onclick=()=>showTab('settingsSection');
 })();
 </script><script>if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
