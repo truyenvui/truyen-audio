@@ -442,15 +442,23 @@ $('discover').onclick=async()=>{
      if(lastPart&&!genericRoute.has(norm(lastPart))){
       let misses=0;
       const firstPage=numberedTail?Number(numberedTail[1]):2;
-      for(let n=firstPage;n<firstPage+200&&misses<2;n++){
+      const pageTextSeen=new Set();
+      for(let n=firstPage;n<firstPage+60&&misses<2;n++){
        const candidate=new URL(basePath+'/'+n+'/',url.origin).href;
-       say('importStatus','Đang dò dạng trang /'+n+'/… Đã xác minh '+numberedPagesFound+' trang tiếp theo');
+       say('importStatus','Đang kiểm tra trang /'+n+'/… Đã xác nhận '+numberedPagesFound+' trang có nội dung riêng');
        try{
         const probeResponse=await readerRequest(candidate,18000);
         const probeRaw=await probeResponse.text();
         const blocked=/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(probeRaw);
-        const usable=probeResponse.ok&&!blocked&&cleanReaderText(probeRaw).trim().length>=120;
-        if(usable){found.add(candidate);numberedPagesFound++;misses=0}
+        const pageText=cleanReaderText(probeRaw).replace(/\\s+/g,' ').trim();
+        const notFound=/\\b(404|not found|page not found|không tìm thấy trang|trang không tồn tại)\\b/i.test(pageText.slice(0,900));
+        const signature=pageText.toLowerCase().slice(0,12000);
+        const usable=probeResponse.ok&&!blocked&&!notFound&&pageText.length>=120;
+        if(usable&&pageTextSeen.has(signature)){
+         // Website trả lại cùng một nội dung cho số trang tiếp theo: không tính là chương mới.
+         break;
+        }
+        if(usable){pageTextSeen.add(signature);found.add(candidate);numberedPagesFound++;misses=0}
         else misses++;
        }catch(e){misses++}
        await sleep(180);
