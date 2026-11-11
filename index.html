@@ -281,6 +281,7 @@ $('discover').onclick=async()=>{
   const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
   const pages=[url.href],seenPages=new Set(),found=new Set();
   const maxPages=40,maxFound=600;
+  let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
    const pageUrl=pages.shift();
    if(seenPages.has(pageUrl))continue;
@@ -288,6 +289,8 @@ $('discover').onclick=async()=>{
    say('importStatus','Đang phân tích trang '+seenPages.size+'/'+maxPages+'… Đã thấy '+found.size+' link chương');
    const response=await readerRequest(pageUrl,30000);
    const raw=await response.text();
+   const totalMatch=raw.match(/(?:số\s+chương|tổng\s+số\s+chương|total\s+chapters|number\s+of\s+chapters)\s*[:：]?\s*(\d{1,6})/i)||raw.match(/(\d{1,6})\s+chương\b/i);
+   if(totalMatch){const total=Number(totalMatch[1]);if(total>0&&total<100000)declaredChapterTotal=Math.max(declaredChapterTotal,total)}
    if(!response.ok)throw Error(explainFetchError(response.status,raw));
    if(/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(raw))throw Error('Website yêu cầu xác minh bảo mật. App không tự vượt bước xác minh này.');
    const extracted=[];
@@ -346,8 +349,11 @@ $('discover').onclick=async()=>{
   const verified=[...groups.values()].filter(rows=>new Set(rows.map(x=>x.number)).size>=3).sort((a,b)=>b.length-a.length)[0];
   let generated=0;
   if(verified){
-   const first=Math.min(...verified.map(x=>x.number)),template=verified[0],knownMax=maxKnownChapter(url.href),startAt=knownMax>=first?knownMax+1:first;
-   for(let n=startAt;n<startAt+200;n++){
+   const first=Math.min(...verified.map(x=>x.number)),listedMax=Math.max(...verified.map(x=>x.number)),template=verified[0],knownMax=maxKnownChapter(url.href),startAt=Math.max(first,knownMax+1);
+   // Only synthesize URLs up to a total explicitly reported by the site or the highest chapter actually listed.
+   // Never invent hundreds of unverified chapter links beyond the site's known range.
+   const endAt=declaredChapterTotal||listedMax;
+   for(let n=startAt;n<=Math.min(endAt,startAt+199);n++){
     const id=n+template.offset;if(!Number.isSafeInteger(id)||id<0)continue;
     const path=template.prefix+template.word+template.sep1+n+template.sep2+id+template.ext;
     const candidate=new URL(path,template.u.origin).href;
