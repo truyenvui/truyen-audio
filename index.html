@@ -39,7 +39,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
-<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -252,7 +252,8 @@ $('fetch').onclick=async()=>{
  if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}
  const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
  skippedCount=urls.length-pendingAll.length;renderImports();
- const pending=pendingAll.slice(0,20);
+ const batchLimit=Math.max(1,Math.min(200,Number($('batchSize')?.value)||100));
+ const pending=pendingAll.slice(0,batchLimit);
  const total=urls.length,doneBefore=total-pendingAll.length;
  $('importProgress').max=total;$('importProgress').value=doneBefore;
  say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
@@ -261,7 +262,7 @@ $('fetch').onclick=async()=>{
  try{
   for(let i=0;i<pending.length;i++){
    say('waitCount',pending.length-i);
-   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' của lượt 20 chương. Bản nháp được lưu sau từng chương.');
+   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' trong lượt tối đa '+batchLimit+' chương. Bản nháp được lưu sau từng chương.');
    let item;
    try{item=await readUrl(pending[i]);if($('autoTranslate').checked){item.originalText=item.text;try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}}}
    catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
