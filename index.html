@@ -301,13 +301,14 @@ $('discover').onclick=async()=>{
 $('exportCollected').onclick=()=>{
  const ready=imports.filter(x=>x.ok&&String(x.text||'').trim());
  if(!ready.length){say('importStatus','Chưa có chương lấy thành công để xuất.');return}
- const title=(($('storyUrl').value.trim()&&(()=>{try{return new URL($('storyUrl').value.trim()).pathname.split('/').filter(Boolean).pop().replace(/[-_]+/g,' ')}catch{return ''}})())||ready[0].title||'Truyện đã gom').replace(/\\s+/g,' ').trim();
- const body=ready.map((c,i)=>{
-  const index=imports.indexOf(c),t=document.querySelector('[data-title="'+index+'"]')?.value.trim()||c.title||('Chương '+(i+1));
-  const content=document.querySelector('[data-text="'+index+'"]')?.value??c.text;
-  return t+'\\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\\n\\n'+String(content||'').trim();
- }).join('\\n\\n'+'-'.repeat(36)+'\\n\\n');
- downloadTxt(title, title+'\\n'+'='.repeat(Math.min(60,Math.max(8,title.length)))+'\\n\\n'+body);
+ const title=(($('storyUrl').value.trim()&&(()=>{try{return new URL($('storyUrl').value.trim()).pathname.split('/').filter(Boolean).pop().replace(/[-_]+/g,' ')}catch{return ''}})())||ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
+ const body=ready.map((item,i)=>{
+  const index=imports.indexOf(item);
+  const t=document.querySelector('[data-title="'+index+'"]')?.value.trim()||item.title||('Chương '+(i+1));
+  const content=document.querySelector('[data-text="'+index+'"]')?.value??item.text;
+  return t+'\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\n\n'+String(content||'').trim();
+ }).join('\n\n'+'-'.repeat(36)+'\n\n');
+ downloadTxt(title,title+'\n'+'='.repeat(Math.min(60,Math.max(8,title.length)))+'\n\n'+body);
  say('importStatus','Đã tạo file TXT gồm '+ready.length+' chương. Trên iPhone, chọn Lưu vào Tệp để lưu lại.');
 };
 $('saveImports').onclick=async()=>{
@@ -386,8 +387,8 @@ function exportEpub(){
  say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương. Nội dung thư viện được giữ nguyên. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
 }
 function downloadTxt(title,content){
- const safe=(title||'truyen').replace(/[\\\\/:*?"<>|]+/g,' ').trim().replace(/\\s+/g,'-').slice(0,80)||'truyen';
- const blob=new Blob(['\\uFEFF',String(content||'')],{type:'text/plain;charset=utf-8'});
+ const safe=(title||'truyen').replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'truyen';
+ const blob=new Blob(['\uFEFF',String(content||'')],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=safe+'.txt';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),5000);
@@ -398,9 +399,9 @@ function exportLibraryTxt(){
  if(!chapters.length){say('libraryStatus','Bộ truyện này chưa có chương có nội dung để xuất.');return}
  const body=chapters.map((c,i)=>{
   const t=(c.title||('Chương '+(i+1))).trim();
-  return t+'\\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\\n\\n'+String(c.text||'').trim();
- }).join('\\n\\n'+'-'.repeat(36)+'\\n\\n');
- downloadTxt(b.title,b.title+'\\n'+'='.repeat(Math.min(60,Math.max(8,String(b.title||'').length)))+'\\n\\n'+body);
+  return t+'\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\n\n'+String(c.text||'').trim();
+ }).join('\n\n'+'-'.repeat(36)+'\n\n');
+ downloadTxt(b.title,b.title+'\n'+'='.repeat(Math.min(60,Math.max(8,String(b.title||'').length)))+'\n\n'+body);
  say('libraryStatus','Đã tạo file TXT gồm '+chapters.length+' chương. Thư viện vẫn được giữ nguyên; chọn Lưu vào Tệp trên iPhone để lưu file.');
 }
 $('exportLibraryEpub').onclick=exportLibraryTxt;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
