@@ -300,8 +300,8 @@ $('discover').onclick=async()=>{
     extracted.push({label,href:m[1].replace(/&amp;/g,'&')});
    }
    // Also read rel=next/prev links and URLs exposed by public JSON-LD metadata.
-   for(const m of raw.matchAll(/<(?:link|a)\\b(?=[^>]*\\brel\\s*=\\s*["'][^"']*\\b(?:next|prev|previous)\\b)[^>]*\\bhref\\s*=\\s*["']([^"']+)["'][^>]*>/gi))extracted.push({label:'next',href:m[1].replace(/&amp;/g,'&')});
-   for(const m of raw.matchAll(/["'](?:url|@id)["']\\s*:\\s*["'](https?:\\/\\/[^"']+)["']/gi))extracted.push({label:'',href:m[1].replace(/\\\\\\//g,'/')});
+   for(const m of raw.matchAll(/<(?:link|a)\b(?=[^>]*\brel\s*=\s*["'][^"']*\b(?:next|prev|previous)\b)[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi))extracted.push({label:'next',href:m[1].replace(/&amp;/g,'&')});
+   for(const m of raw.matchAll(/["'](?:url|@id)["']\s*:\s*["'](https?:\/\/[^"']+)["']/gi))extracted.push({label:'',href:m[1].replace(/\\\//g,'/')});
    for(const m of raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g))extracted.push({label:'',href:m[0].replace(/[.,;]+$/,'')});
    const hrefs=new Map();
    for(const item of extracted){
