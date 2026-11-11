@@ -541,7 +541,7 @@ $('resetAllData').onclick=async()=>{
  try{
   if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null}
   try{await libraryWriteQueue}catch(e){}
-  lib=[];bid='';cid=[];imports=[];history=[];chunks=[];pos=0;playing=false;paused=false;
+  lib=[];bid='';cid='';imports=[];history=[];chunks=[];pos=0;playing=false;paused=false;
   if(libraryDb){
    await new Promise((resolve,reject)=>{const tx=libraryDb.transaction('library','readwrite');tx.objectStore('library').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('Không xóa được thư viện'));tx.onabort=()=>reject(tx.error||Error('Xóa thư viện bị gián đoạn'))});
   }
