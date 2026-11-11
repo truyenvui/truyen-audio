@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090a0c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Góc Nghe Truyện">
-<link rel="manifest" href="./manifest.json"><title>Góc Nghe Truyện · Thu thập truyện</title>
+<link rel="manifest" href="./manifest.json"><title>Góc Thu Thập Truyện · EPUB</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0c;--panel:#131518;--panel2:#1b1e22;--text:#f5f5f3;--muted:#9b9da3;--gold:#f4c477;--line:#292c31;--green:#65d49a;--red:#ff827c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#181713 0,#090a0c 48%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
 button,input,select,textarea{font:inherit}button{cursor:pointer;min-height:44px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);color:var(--text);padding:10px 13px;font-weight:650}button:disabled{opacity:.45;cursor:default}.primary{background:var(--gold);color:#20180c;border-color:var(--gold)}.iconbtn{width:44px;padding:0;font-size:19px}.danger{color:#ffaaa4}
 main{max-width:760px;margin:auto;padding:env(safe-area-inset-top) 16px calc(94px + env(safe-area-inset-bottom))}.top{display:flex;align-items:center;gap:12px;padding:22px 2px 18px}.brandicon{width:48px;height:48px;border-radius:16px;background:#292116;color:var(--gold);display:grid;place-items:center;font-size:25px}.brand{flex:1}.brand h1{font-size:23px;margin:0;letter-spacing:-.5px}.muted,.small{color:var(--muted)}.small{font-size:13px}.section{background:linear-gradient(145deg,#17191c,#111315);border:1px solid var(--line);border-radius:24px;padding:17px;margin-bottom:14px;box-shadow:0 10px 28px #0002}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.sectionhead h2{font-size:17px;margin:0}.eyebrow{color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:1.3px;font-weight:800}
-label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=text],input[type=url],select,textarea{width:100%;border:1px solid #34373c;background:#0d0f11;color:var(--text);border-radius:14px;padding:12px;font-size:16px;outline:none}input:focus,textarea:focus,select:focus{border-color:#a78651}textarea{min-height:120px;resize:vertical;line-height:1.55}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions>*{flex:1}.status{font-size:13px;color:var(--gold);margin-top:10px;min-height:18px}.manual-links{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#0d0f11}.manual-links summary{font-size:13px;color:var(--muted);cursor:pointer}.savehint{font-size:12px;color:var(--muted);margin:10px 0 0}.importsummary{font-size:13px;color:var(--muted);margin:0 0 12px}.hidden{display:none!important}.tab-hidden{display:none!important}
+label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=text],input[type=url],select,textarea{width:100%;border:1px solid #34373c;background:#0d0f11;color:var(--text);border-radius:14px;padding:12px;font-size:16px;outline:none}input:focus,textarea:focus,select:focus{border-color:#a78651}textarea{min-height:120px;resize:vertical;line-height:1.55}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions>*{flex:1}.status{font-size:13px;color:var(--gold);margin-top:10px;min-height:18px}.manual-links{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#0d0f11}.manual-links summary{font-size:13px;color:var(--muted);cursor:pointer}.import-progress{margin:12px 0 4px}.import-progress progress{width:100%;height:9px;accent-color:var(--gold);border:0;border-radius:99px;overflow:hidden}.import-progress .small{text-align:right;margin-top:5px}.savehint{font-size:12px;color:var(--muted);margin:10px 0 0}.importsummary{font-size:13px;color:var(--muted);margin:0 0 12px}.hidden{display:none!important}.tab-hidden{display:none!important}
 /* Story-collector mode: hide legacy audio UI while retaining its data handlers for compatibility. */
 #playerSection,#historySection,.audio-settings{display:none!important}
 .bottominner{grid-template-columns:repeat(3,1fr)!important}
@@ -29,7 +29,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </style>
 </head>
 <body><main>
-<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Nghe Truyện</h1><div class="small">Trình thu thập · quản lý · xuất EPUB</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
+<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Thu Thập Truyện</h1><div class="small">Trình thu thập · quản lý · xuất EPUB</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
 
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
@@ -41,6 +41,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
+<div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
 <div class="savehint">Chỉ lưu khi ông bấm nút bên dưới.</div>
 <div class="actions"><button id="saveImports" disabled>Lưu vào thư viện</button><button id="exportCollected" disabled>Xuất EPUB</button></div>
@@ -93,7 +94,7 @@ function chapterNumber(value){const raw=String(value||''),plain=raw.normalize('N
 function sameStoryUrl(a,b){try{const x=new URL(a),y=new URL(b);const hx=x.hostname.replace(/^www\./i,''),hy=y.hostname.replace(/^www\./i,'');return hx===hy&&storySlugFromUrl(a)!==''&&storySlugFromUrl(a)===storySlugFromUrl(b)}catch(e){return false}}
 function bookMatchesStory(b,url){const slug=storySlugFromUrl(url);if(slug&&normalizedSlug(b.title)===slug)return true;return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url))}
 function isAlreadySaved(url,title=''){for(const b of lib){if((b.chapters||[]).some(c=>c.sourceUrl===url))return true}const no=chapterNumber(url)||chapterNumber(title);if(!no)return false;for(const b of lib){if(!bookMatchesStory(b,url))continue;if((b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url)&&((chapterNumber(c.sourceUrl)||chapterNumber(c.title))===no)))return true;if((b.chapters||[]).some(c=>!c.sourceUrl&&chapterNumber(c.title)===no&&normalizedSlug(b.title)===storySlugFromUrl(url)))return true}return false}
-function isAlreadyImported(url){const no=chapterNumber(url);return imports.some(x=>{if(x.url===url)return true;const oldNo=chapterNumber(x.url)||chapterNumber(x.title);return no&&oldNo===no&&sameStoryUrl(x.url,url)})}
+function isAlreadyImported(url){const no=chapterNumber(url);return imports.some(x=>{if(!x.ok)return false;if(x.url===url)return true;const oldNo=chapterNumber(x.url)||chapterNumber(x.title);return no&&oldNo===no&&sameStoryUrl(x.url,url)})}
 function maxKnownChapter(url){let max=0;for(const b of lib){if(!bookMatchesStory(b,url))continue;for(const c of b.chapters||[]){const n=chapterNumber(c.sourceUrl)||chapterNumber(c.title);if(n)max=Math.max(max,n)}}for(const x of imports){if(x.url&&sameStoryUrl(x.url,url)){const n=chapterNumber(x.url)||chapterNumber(x.title);if(n)max=Math.max(max,n)}}return max}
 const LIB_DB='goc_nghe_truyen_library_db_v1';
 let libraryDb=null,libraryReady=false,libraryStorageFailed=false,libraryWriteTimer=null,libraryWriteQueue=Promise.resolve(),libraryPending=false;
@@ -178,24 +179,29 @@ $('fetch').onclick=async()=>{
  const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
  skippedCount=urls.length-pendingAll.length;renderImports();
  const pending=pendingAll.slice(0,20);
- if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp. Không còn chương mới trong danh sách này.');return}
+ const total=urls.length,doneBefore=total-pendingAll.length;
+ $('importProgress').max=total;$('importProgress').value=doneBefore;
+ say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
+ if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp thành công. Không còn chương mới trong lượt này.');return}
  $('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;
  try{
   for(let i=0;i<pending.length;i++){
    say('waitCount',pending.length-i);
-   say('importStatus','Đang lấy '+(i+1)+'/'+pending.length+' chương của lượt này. Tự bỏ qua '+skippedCount+' chương đã có.');
+   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' của lượt 20 chương. Bản nháp được lưu sau từng chương.');
    let item;
    try{item=await readUrl(pending[i])}
    catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
    imports.push(item);
    try{await writeDraft();saved++}
-   catch(e){say('importStatus','Không lưu được bản nháp tự động. Dừng để tránh mất thêm dữ liệu; ông hãy lưu các chương đang hiện.');renderImports();break}
+   catch(e){say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');renderImports();break}
+   $('importProgress').value=Math.min(total,doneBefore+i+1);
+   say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
    renderImports();if(i<pending.length-1)await sleep(450)
   }
  }finally{
   $('fetch').disabled=false;say('waitCount',0);
   const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
-  say('importStatus','Đã xử lý thêm '+saved+' chương. Bản nháp có '+imports.filter(x=>x.ok).length+' chương thành công; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới; bấm Lấy nội dung chương lần nữa để tiếp tục.':'Đã hết link mới trong danh sách.'))
+  say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
 $('discover').onclick=async()=>{
