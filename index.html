@@ -416,7 +416,19 @@ $('discover').onclick=async()=>{
     if(!found.has(candidate)){found.add(candidate);generated++}
    }
   }
-  const allResults=[...found].sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
+  // Hỗ trợ trang truyện chỉ có một chương: nếu không có link chương con,
+   // kiểm tra trang hiện tại có nội dung truyện đọc được hay không.
+   let singlePageChapter=false;
+   if(found.size===0){
+    try{
+     const single=await readUrl(url.href);
+     if(single&&single.ok&&String(single.text||'').trim().length>=120){
+      found.add(url.href);
+      singlePageChapter=true;
+     }
+    }catch(e){}
+   }
+   const allResults=[...found].sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
   const freshResults=allResults.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
   skippedCount=allResults.length-freshResults.length;
   const result=freshResults.slice(0,200);
@@ -429,7 +441,7 @@ $('discover').onclick=async()=>{
    say('importStatus',explanation+' Thư viện không bị thay đổi.');
    renderImports();return;
   }
-  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương ('+patternRows.length+' link có mẫu số chương rõ ràng; tạo thêm '+generated+' link theo mẫu đã kiểm chứng). Bỏ qua '+skippedCount+' link trùng chắc chắn; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
+  say('importStatus',singlePageChapter?'Đã nhận diện trang hiện tại là truyện một chương. Ông có thể bấm “Lấy nội dung chương”.':'Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương ('+patternRows.length+' link có mẫu số chương rõ ràng; tạo thêm '+generated+' link theo mẫu đã kiểm chứng). Bỏ qua '+skippedCount+' link trùng chắc chắn; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
  }catch(e){
   const message=e.message||'Không tìm thấy link chương.';
   say('importStatus',message);
