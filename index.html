@@ -35,11 +35,11 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <label for="storyUrl">Link trang truyện</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link truyện vào đây...">
-<div class="actions"><button class="primary" id="makeNumberedLinks" type="button">Tạo link tuần tự từ trang 1 đến trang cuối</button></div><p class="small">Cách này không dò link tự động: nhập số trang cuối, app sẽ tạo đúng thứ tự 1 → 2 → 3 → … → N. Sau đó bấm “Lấy nội dung chương”.</p>
+<div class="actions"><button class="primary" id="discover" type="button">Tìm link chương tự động</button></div><p class="small">Web lần theo liên kết phân trang và chương do website công khai cung cấp, giữ thứ tự thực tế; không tự bịa link theo số.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
-<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="maxDiscoverPages">Số trang cuối cùng muốn lấy (ví dụ 10 = trang 1 đến trang 10)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="20" placeholder="Ví dụ: 8"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="maxDiscoverPages">Giới hạn số link muốn tìm (tối đa 200)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="20" placeholder="Ví dụ: 8"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -279,20 +279,6 @@ $('fetch').onclick=async()=>{
   say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
-$('makeNumberedLinks').onclick=()=>{
- let base;
- try{base=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Dán link trang truyện hợp lệ trước nhé.');return}
- const max=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'1',10)||1));
- let path=decodeURIComponent(base.pathname).replace(/\/+$/,'');
- if(/\/\d{1,4}$/.test(path))path=path.replace(/\/\d{1,4}$/,'');
- const root=base.origin+path+'/';
- const links=[root,...Array.from({length:max-1},(_,i)=>root+(i+2)+'/')];
- $('urls').value=links.join('\n');
- say('importStatus','Đã tạo '+links.length+' link theo thứ tự 1 → '+max+'. Không dò và không tự sắp xếp lại. Bấm “Lấy nội dung chương” để lấy lần lượt.');
- $('importProgress').max=links.length;$('importProgress').value=0;
- say('progressLabel','Đã tạo '+links.length+' link, chưa tải nội dung');
- $('discoverHelp').classList.add('hidden');
-};
 $('discover').onclick=async()=>{
  let url;
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
@@ -304,7 +290,7 @@ $('discover').onclick=async()=>{
   const wanted=storySlugFromUrl(url.href);
   const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
   const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
-  const pages=[url.href],seenPages=new Set(),found=new Set();
+  const pages=[url.href],seenPages=new Set(),found=new Set(),chapterOrder=new Map(),foundSequence=[];
   const maxPages=40,maxFound=600;
   let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
@@ -397,91 +383,19 @@ $('discover').onclick=async()=>{
       const hasChapterWord=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(p);
       const numericId=/\/\d{4,8}(?:\.html?)?\/?$/i.test(p);
       const belongs= (!!wanted&&norm(p).includes(wanted)) || (!!wanted&&identity===wanted) || (!!wanted&&p.toLowerCase().includes(wanted.replace(/-/g,'_')));
-      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href)found.add(u.href);
+      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href){if(!found.has(u.href))foundSequence.push(u.href);found.add(u.href)}
      }catch(e){}
     }
    }catch(e){}
   }
-  const patternRows=[...found].map(href=>{
-   try{
-    const u=new URL(href),p=decodeURIComponent(u.pathname);
-    const m=p.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)([-_])(\d+)(\.html?)?$/i);
-    if(!m)return null;
-    return {href,u,prefix:m[1],word:m[2],sep1:m[3],number:Number(m[4]),sep2:m[5],id:Number(m[6]),ext:m[7]||'',offset:Number(m[6])-Number(m[4])};
-   }catch{return null}
-  }).filter(Boolean);
-  const groups=new Map();
-  for(const row of patternRows){
-   const key=[row.u.origin,row.prefix,row.word.toLowerCase(),row.sep1,row.sep2,row.ext,row.offset].join('|');
-   if(!groups.has(key))groups.set(key,[]);
-   groups.get(key).push(row);
-  }
-  const verified=[...groups.values()].filter(rows=>new Set(rows.map(x=>x.number)).size>=3).sort((a,b)=>b.length-a.length)[0];
-  let generated=0;
-  if(verified){
-   const first=Math.min(...verified.map(x=>x.number)),listedMax=Math.max(...verified.map(x=>x.number)),template=verified[0],knownMax=maxKnownChapter(url.href),startAt=Math.max(first,knownMax+1);
-   // Only synthesize URLs up to a total explicitly reported by the site or the highest chapter actually listed.
-   // Never invent hundreds of unverified chapter links beyond the site's known range.
-   const endAt=declaredChapterTotal||listedMax;
-   for(let n=startAt;n<=Math.min(endAt,startAt+199);n++){
-    const id=n+template.offset;if(!Number.isSafeInteger(id)||id<0)continue;
-    const path=template.prefix+template.word+template.sep1+n+template.sep2+id+template.ext;
-    const candidate=new URL(path,template.u.origin).href;
-    if(!found.has(candidate)){found.add(candidate);generated++}
-   }
-  }
-  const hadDiscoveredLinks=found.size>0;
-  // Hỗ trợ trang truyện chỉ có một chương: nếu không có link chương con,
-   // kiểm tra trang hiện tại có nội dung truyện đọc được hay không.
-   let singlePageChapter=false;
-   if(found.size===0){
-    try{
-     const single=await readUrl(url.href);
-     if(single&&single.ok&&String(single.text||'').trim().length>=120){
-      found.add(url.href);
-      singlePageChapter=true;
-     }
-    }catch(e){}
-   }
-   // Một số website xuất bản mỗi chương ở URL phân trang dạng /ten-truyen/2/, /3/...
-   // Chỉ dò khi bộ đọc không tìm được link mục lục; mỗi URL chỉ được nhận nếu trang trả về nội dung đủ dài.
-   let numberedPagesFound=0;
-   if(!hadDiscoveredLinks){
-    try{
-     const currentPath=decodeURIComponent(url.pathname).replace(new RegExp('/+$'),'');
-     const numberedTail=currentPath.match(new RegExp('/([0-9]{1,4})$'));
-     const basePath=numberedTail?currentPath.slice(0,-numberedTail[0].length):currentPath;
-     const lastPart=basePath.split('/').filter(Boolean).pop()||'';
-     const genericRoute=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
-     if(lastPart&&!genericRoute.has(norm(lastPart))){
-      let misses=0;
-      const firstPage=numberedTail?Number(numberedTail[1]):2;
-      const pageTextSeen=new Set();
-      const maxPage=Math.max(firstPage,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'20',10)||20));
-      for(let n=firstPage;n<=maxPage&&misses<2;n++){
-       const candidate=new URL(basePath+'/'+n+'/',url.origin).href;
-       say('importStatus','Đang kiểm tra trang /'+n+'/… Đã xác nhận '+numberedPagesFound+' trang có nội dung riêng');
-       try{
-        const probeResponse=await readerRequest(candidate,18000);
-        const probeRaw=await probeResponse.text();
-        const blocked=/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(probeRaw);
-        const pageText=cleanReaderText(probeRaw).replace(/\\s+/g,' ').trim();
-        const notFound=/\\b(404|not found|page not found|không tìm thấy trang|trang không tồn tại)\\b/i.test(pageText.slice(0,900));
-        const signature=pageText.toLowerCase().slice(0,12000);
-        const usable=probeResponse.ok&&!blocked&&!notFound&&pageText.length>=120;
-        if(usable&&pageTextSeen.has(signature)){
-         // Website trả lại cùng một nội dung cho số trang tiếp theo: không tính là chương mới.
-         break;
-        }
-        if(usable){pageTextSeen.add(signature);found.add(candidate);numberedPagesFound++;misses=0}
-        else misses++;
-       }catch(e){misses++}
-       await sleep(180);
-      }
-     }
-    }catch(e){}
-   }
-   const allResults=[...found].sort((a,b)=>chapterNo(a)-chapterNo(b)||a.localeCompare(b,'vi'));
+  // Không tự dựng URL chương từ mẫu số hoặc đoán /2/, /3/...
+  // Chỉ dùng link chương thật và link phân trang thật đã được đọc từ website.
+  const sequenceIndex=new Map(foundSequence.map((u,i)=>[u,i]));
+  const allResults=[...found].sort((a,b)=>{
+   const na=chapterOrder.get(a)??chapterNo(a),nb=chapterOrder.get(b)??chapterNo(b);
+   if(Number.isFinite(na)&&Number.isFinite(nb)&&na!==nb)return na-nb;
+   return (sequenceIndex.get(a)??0)-(sequenceIndex.get(b)??0);
+  });
   const freshResults=allResults.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
   skippedCount=allResults.length-freshResults.length;
   const result=freshResults.slice(0,200);
