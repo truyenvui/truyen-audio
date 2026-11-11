@@ -76,7 +76,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <label for="speed">Tốc độ đọc <b id="speedLabel" style="color:var(--gold)">1.1×</b></label><input id="speed" type="range" min=".6" max="2" step=".1" value="1.1">
 <label for="timer">Hẹn giờ ngủ</label><select id="timer"><option value="0">Không hẹn giờ</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="90">90 phút</option></select>
 <p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p></div>
-<p class="small">Xuất toàn bộ bộ truyện đang chọn thành một file TXT. Có thể nhập bản sao JSON để khôi phục thư viện đã sao lưu.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất TXT từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+<p class="small">Xuất toàn bộ bộ truyện đang chọn thành một file TXT. Có thể nhập bản sao JSON để khôi phục thư viện đã sao lưu.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất TXT từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div><div class="actions"><button id="resetAllData" class="danger">Xóa toàn bộ dữ liệu app</button></div><p class="small">Thao tác này xóa thư viện, bản nháp, lịch sử và cài đặt đã lưu trên Safari của thiết bị này. Không thể hoàn tác.</p>
 </section></div>
 </main>
 <nav class="bottom" aria-label="Điều hướng chính"><div class="bottominner"><button class="nav active" data-target="importSection"><span>⇩</span>Thu thập</button><button class="nav" data-target="librarySection"><span>▤</span>Thư viện</button><button class="nav" data-target="settingsSection"><span>⚙</span>Xuất & sao lưu</button></div></nav>
@@ -535,6 +535,24 @@ function exportLibraryTxt(){
  downloadTxt(b.title,b.title+'\n'+'='.repeat(Math.min(60,Math.max(8,String(b.title||'').length)))+'\n\n'+body);
  say('libraryStatus','Đã tạo file TXT gồm '+chapters.length+' chương. Thư viện vẫn được giữ nguyên; chọn Lưu vào Tệp trên iPhone để lưu file.');
 }
+$('resetAllData').onclick=async()=>{
+ if(!confirm('XÓA TOÀN BỘ dữ liệu Góc Thu Thập Truyện trên thiết bị này? Thư viện, chương, bản nháp, lịch sử và cài đặt sẽ bị xóa. Không thể hoàn tác.'))return;
+ if(!confirm('Xác nhận lần cuối: ông đã sao lưu những truyện cần giữ và đồng ý xóa sạch?'))return;
+ try{
+  if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null}
+  try{await libraryWriteQueue}catch(e){}
+  lib=[];bid='';cid=[];imports=[];history=[];chunks=[];pos=0;playing=false;paused=false;
+  if(libraryDb){
+   await new Promise((resolve,reject)=>{const tx=libraryDb.transaction('library','readwrite');tx.objectStore('library').clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||Error('Không xóa được thư viện'));tx.onabort=()=>reject(tx.error||Error('Xóa thư viện bị gián đoạn'))});
+  }
+  await clearDraft();
+  ['goc_nghe_truyen_library_v1','goc_nghe_truyen_history_v1','goc_nghe_truyen_speed_v2','goc_nghe_truyen_voice_v2'].forEach(k=>localStorage.removeItem(k));
+  $('storyUrl').value='';$('urls').value='';$('title').value='';$('story').value='';$('chapterNotes').value='';
+  render();renderImports();showTab('importSection');
+  say('libraryStatus','Đã xóa toàn bộ thư viện, bản nháp, lịch sử và cài đặt trên thiết bị này.');
+  say('importStatus','Dữ liệu đã được đặt lại. App sẵn sàng như mới.');
+ }catch(e){say('libraryStatus','Chưa xóa sạch được: '+(e.message||'lỗi bộ nhớ Safari')+'. Ông tải lại trang rồi thử lại.')}
+};
 $('exportLibraryEpub').onclick=exportLibraryTxt;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
  importSection:['importSection','statsSection','resultsSection'],
