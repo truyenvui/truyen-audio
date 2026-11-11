@@ -291,7 +291,7 @@ $('discover').onclick=async()=>{
   const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
   const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
   const pages=[url.href],seenPages=new Set(),found=new Set(),chapterOrder=new Map(),foundSequence=[];
-  const maxPages=40,maxFound=600;
+  const maxPages=40,maxFound=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'200',10)||200));
   let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
    const pageUrl=pages.shift();
