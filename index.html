@@ -441,7 +441,7 @@ $('discover').onclick=async()=>{
      const genericRoute=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
      if(lastPart&&!genericRoute.has(norm(lastPart))){
       let misses=0;
-      const firstPage=numberedTail?Number(numberedTail[1])+1:2;
+      const firstPage=numberedTail?Number(numberedTail[1]):2;
       for(let n=firstPage;n<firstPage+200&&misses<2;n++){
        const candidate=new URL(basePath+'/'+n+'/',url.origin).href;
        say('importStatus','Đang dò dạng trang /'+n+'/… Đã xác minh '+numberedPagesFound+' trang tiếp theo');
