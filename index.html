@@ -416,6 +416,7 @@ $('discover').onclick=async()=>{
     if(!found.has(candidate)){found.add(candidate);generated++}
    }
   }
+  const hadDiscoveredLinks=found.size>0;
   // Hỗ trợ trang truyện chỉ có một chương: nếu không có link chương con,
    // kiểm tra trang hiện tại có nội dung truyện đọc được hay không.
    let singlePageChapter=false;
@@ -425,6 +426,35 @@ $('discover').onclick=async()=>{
      if(single&&single.ok&&String(single.text||'').trim().length>=120){
       found.add(url.href);
       singlePageChapter=true;
+     }
+    }catch(e){}
+   }
+   // Một số website xuất bản mỗi chương ở URL phân trang dạng /ten-truyen/2/, /3/...
+   // Chỉ dò khi bộ đọc không tìm được link mục lục; mỗi URL chỉ được nhận nếu trang trả về nội dung đủ dài.
+   let numberedPagesFound=0;
+   if(!hadDiscoveredLinks){
+    try{
+     const currentPath=decodeURIComponent(url.pathname).replace(new RegExp('/+$'),'');
+     const numberedTail=currentPath.match(new RegExp('/([0-9]{1,4})$'));
+     const basePath=numberedTail?currentPath.slice(0,-numberedTail[0].length):currentPath;
+     const lastPart=basePath.split('/').filter(Boolean).pop()||'';
+     const genericRoute=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
+     if(lastPart&&!genericRoute.has(norm(lastPart))){
+      let misses=0;
+      const firstPage=numberedTail?Number(numberedTail[1])+1:2;
+      for(let n=firstPage;n<firstPage+200&&misses<2;n++){
+       const candidate=new URL(basePath+'/'+n+'/',url.origin).href;
+       say('importStatus','Đang dò dạng trang /'+n+'/… Đã xác minh '+numberedPagesFound+' trang tiếp theo');
+       try{
+        const probeResponse=await readerRequest(candidate,18000);
+        const probeRaw=await probeResponse.text();
+        const blocked=/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(probeRaw);
+        const usable=probeResponse.ok&&!blocked&&cleanReaderText(probeRaw).trim().length>=120;
+        if(usable){found.add(candidate);numberedPagesFound++;misses=0}
+        else misses++;
+       }catch(e){misses++}
+       await sleep(180);
+      }
      }
     }catch(e){}
    }
