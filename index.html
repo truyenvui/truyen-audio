@@ -273,48 +273,62 @@ $('discover').onclick=async()=>{
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
  $('discover').disabled=true;
  $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
- say('importStatus','Đang tìm các trang danh sách chương…');
+ say('importStatus','Đang phân tích trang truyện, mục lục và các trang chương…');
  try{
-  const norm=v=>decodeURIComponent(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const storySlug=url.pathname.split('/').filter(Boolean).pop().toLowerCase().replace(/\.html?$/,'');
-  const wanted=norm(storySlug);
-  const chapterWords=/chuong|chapter|chap(?:ter)?[-_ ]?\d|tap[-_ ]?\d|phan[-_ ]?\d/i;
-  const chapterNo=u=>{const p=decodeURIComponent(new URL(u).pathname);const m=p.match(/(?:chuong|chapter|chap|tap|phan)[^0-9]{0,8}(\d{1,6})/i)||p.match(/(\d{1,6})(?:\.html?)?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER};
+  const norm=v=>decodeURIComponent(String(v||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const wanted=storySlugFromUrl(url.href);
+  const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
+  const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
   const pages=[url.href],seenPages=new Set(),found=new Set();
-  const maxPages=20;
-  while(pages.length&&seenPages.size<maxPages&&found.size<200){
+  const maxPages=40,maxFound=600;
+  while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
    const pageUrl=pages.shift();
    if(seenPages.has(pageUrl))continue;
    seenPages.add(pageUrl);
-   say('importStatus','Đang đọc trang danh sách '+seenPages.size+(pages.length?'…':'…'));
-   const response=await readerRequest(pageUrl,25000);
+   say('importStatus','Đang phân tích trang '+seenPages.size+'/'+maxPages+'… Đã thấy '+found.size+' link chương');
+   const response=await readerRequest(pageUrl,30000);
    const raw=await response.text();
    if(!response.ok)throw Error(explainFetchError(response.status,raw));
    if(/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(raw))throw Error('Website yêu cầu xác minh bảo mật. App không tự vượt bước xác minh này.');
-   const links=[...raw.matchAll(/\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^)\s]+)\)/g)].map(m=>({label:m[1].trim(),href:m[2].replace(/&amp;/g,'&')}));
-   const plain=[...raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g)].map(m=>({label:'',href:m[0].replace(/[.,;]+$/,'')}));
-   const hrefs=[...new Map([...links,...plain].map(x=>{try{const u=new URL(x.href,pageUrl);return [u.href,{label:x.label,url:u}]}catch{return ['',null]}}).filter(x=>x[1])).values()];
-   for(const item of hrefs){
-    const u=item.url;
-    if(u.hostname!==url.hostname||!/^https?:$/.test(u.protocol))continue;
-    const path=decodeURIComponent(u.pathname);
-    const slug=norm(path.split('/').filter(Boolean).pop()||'');
-    const sameStory=norm(path).includes(wanted)||u.pathname===url.pathname;
-    const looksChapter=chapterWords.test(path)||/\d{1,6}(?:\.html?)?$/i.test(path);
-    if(u.href!==url.href&&sameStory&&looksChapter)found.add(u.href);
+   const extracted=[];
+   for(const m of raw.matchAll(/\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^)\s]+|\.{0,2}\/[^)\s]+)\)/g))extracted.push({label:m[1].replace(/[*_]/g,'').trim(),href:m[2].replace(/&amp;/g,'&')});
+   for(const m of raw.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)){
+    const label=m[2].replace(/<[^>]+>/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+    extracted.push({label,href:m[1].replace(/&amp;/g,'&')});
+   }
+   for(const m of raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g))extracted.push({label:'',href:m[0].replace(/[.,;]+$/,'')});
+   const hrefs=new Map();
+   for(const item of extracted){
+    try{
+     const u=new URL(item.href,pageUrl);u.hash='';
+     if(!/^https?:$/.test(u.protocol)||hostKey(u.hostname)!==hostKey(url.hostname))continue;
+     if(!hrefs.has(u.href)||(!hrefs.get(u.href).label&&item.label))hrefs.set(u.href,{url:u,label:item.label});
+    }catch(e){}
+   }
+   const pageIdentity=storySlugFromUrl(pageUrl);
+   for(const item of hrefs.values()){
+    const u=item.url,path=decodeURIComponent(u.pathname),label=item.label||'';
+    const queryChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\d+$/i.test(v));
+    const labelChapter=/\b(?:chương|chuong|chapter|chap|tập|episode|ep)\s*[\divxlc]+/i.test(label);
+    const pathChapter=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(path);
+    const readNumberRoute=/\/(?:read|doc|reader|doc-truyen)\/\d{1,8}\/?$/i.test(path);
+    const numericTail=/\/\d{1,8}(?:\.html?)?\/?$/i.test(path);
+    const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&labelChapter);
+    const linkIdentity=storySlugFromUrl(u.href);
+    const pathHasStory=!!wanted&&norm(path).includes(wanted);
+    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)));
+    if(u.href!==url.href&&looksChapter&&sameStory)found.add(u.href);
     const q=[...u.searchParams.entries()];
-    const queryPage=q.some(([k,v])=>/^(page|paged|p|trang|page_num|pageNumber)$/i.test(k)&&/^\d+$/.test(v));
+    const queryPage=q.some(([k,v])=>/^(?:page|paged|p|trang|page_num|pageNumber)$/i.test(k)&&/^\d+$/.test(v));
     const pathPage=/\/(?:page|trang)\/\d+\/?$/i.test(path);
-    const numericLabel=/^(?:trang\s*)?\d{1,3}$/i.test(item.label);
-    const nextLabel=/^(?:sau|tiếp|tiếp theo|next|»|›|→)$/i.test(item.label);
-    const listingPath=u.pathname===url.pathname||norm(path).includes(wanted);
+    const numericLabel=/^(?:trang\s*)?\d{1,3}$/i.test(label);
+    const nextLabel=/^(?:sau|tiếp|tiếp theo|next|»|›|→|older|xem thêm)$/i.test(label);
+    const listingPath=u.pathname===url.pathname|| (!!wanted&&norm(path).includes(wanted)) || (!!wanted&&storySlugFromUrl(u.href)===wanted);
     if(u.href!==pageUrl&&listingPath&&(queryPage||pathPage||((numericLabel||nextLabel)&&!looksChapter))&&!seenPages.has(u.href)&&!pages.includes(u.href))pages.push(u.href);
    }
-   if(found.size>=200)break;
-   await sleep(250);
+   if(found.size>=maxFound)break;
+   await sleep(200);
   }
-  // Nhận diện mẫu URL có mã số tăng đều từ ít nhất 3 link chương thật.
-  // Chỉ tạo URL ứng viên khi cùng một mẫu đường dẫn và cùng độ lệch đã được xác nhận.
   const patternRows=[...found].map(href=>{
    try{
     const u=new URL(href),p=decodeURIComponent(u.pathname);
@@ -332,13 +346,9 @@ $('discover').onclick=async()=>{
   const verified=[...groups.values()].filter(rows=>new Set(rows.map(x=>x.number)).size>=3).sort((a,b)=>b.length-a.length)[0];
   let generated=0;
   if(verified){
-   const first=Math.min(...verified.map(x=>x.number));
-   const template=verified[0];
-   const knownMax=maxKnownChapter(url.href);
-   const startAt=knownMax>=first?knownMax+1:first;
+   const first=Math.min(...verified.map(x=>x.number)),template=verified[0],knownMax=maxKnownChapter(url.href),startAt=knownMax>=first?knownMax+1:first;
    for(let n=startAt;n<startAt+200;n++){
-    const id=n+template.offset;
-    if(!Number.isSafeInteger(id)||id<0)continue;
+    const id=n+template.offset;if(!Number.isSafeInteger(id)||id<0)continue;
     const path=template.prefix+template.word+template.sep1+n+template.sep2+id+template.ext;
     const candidate=new URL(path,template.u.origin).href;
     if(!found.has(candidate)){found.add(candidate);generated++}
@@ -349,9 +359,15 @@ $('discover').onclick=async()=>{
   skippedCount=allResults.length-freshResults.length;
   const result=freshResults.slice(0,200);
   $('urls').value=result.join('\n');
-  if(!result.length){say('importStatus','Đã tìm thấy link nhưng tất cả đều là chương đã có. App tự bỏ qua '+skippedCount+' link trùng.');renderImports();return}
   say('skipCount',skippedCount);
-  say('importStatus','Đã đọc '+seenPages.size+' trang danh sách, tìm thấy '+patternRows.length+' link có dạng chương và tự tạo thêm '+generated+' link ứng viên. Tự bỏ qua '+skippedCount+' chương đã có; còn '+result.length+' link mới. Bấm Lấy nội dung để bắt đầu.');
+  if(!result.length){
+   const explanation=allResults.length
+    ?'Tìm thấy '+allResults.length+' link, trong đó '+skippedCount+' link được xác nhận trùng với chương đã lưu hoặc bản nháp thành công.'
+    :'Chưa tìm thấy link chương phù hợp. Website có thể dùng mục lục tải bằng JavaScript hoặc cấu trúc link riêng.';
+   say('importStatus',explanation+' Thư viện không bị thay đổi.');
+   renderImports();return;
+  }
+  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương ('+patternRows.length+' link có mẫu số chương rõ ràng; tạo thêm '+generated+' link theo mẫu đã kiểm chứng). Bỏ qua '+skippedCount+' link trùng chắc chắn; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
  }catch(e){
   const message=e.message||'Không tìm thấy link chương.';
   say('importStatus',message);
