@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090a0c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Góc Nghe Truyện">
-<link rel="manifest" href="./manifest.json"><title>Góc Thu Thập Truyện · EPUB</title>
+<link rel="manifest" href="./manifest.json"><title>Góc Thu Thập Truyện · TXT</title>
 <style>
 :root{color-scheme:dark;--bg:#090a0c;--panel:#131518;--panel2:#1b1e22;--text:#f5f5f3;--muted:#9b9da3;--gold:#f4c477;--line:#292c31;--green:#65d49a;--red:#ff827c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#181713 0,#090a0c 48%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
@@ -29,7 +29,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </style>
 </head>
 <body><main>
-<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Thu Thập Truyện</h1><div class="small">Trình thu thập · quản lý · xuất EPUB</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
+<header class="top"><div class="brandicon">▥</div><div class="brand"><h1>Góc Thu Thập Truyện</h1><div class="small">Trình thu thập · quản lý · xuất TXT</div></div><button class="topicon" id="searchBtn" aria-label="Tìm kiếm">⌕</button><button class="topicon" id="settingsBtn" aria-label="Cài đặt">⚙</button></header>
 
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
@@ -44,7 +44,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
 <div class="savehint">Chỉ lưu khi ông bấm nút bên dưới.</div>
-<div class="actions"><button id="saveImports" disabled>Lưu vào thư viện</button><button id="exportCollected" disabled>Xuất EPUB</button></div>
+<div class="actions"><button id="saveImports" disabled>Lưu vào thư viện</button><button id="exportCollected" disabled>Xuất TXT</button></div>
 </section>
 <section class="statsbar" id="statsSection"><div class="stat ok"><b><span>✓</span> <i id="okCount">0</i></b>Thành công</div><div class="stat bad"><b><span>×</span> <i id="errCount">0</i></b>Lỗi</div><div class="stat waiting"><b><span>◷</span> <i id="waitCount">0</i></b>Đang lấy</div><div class="stat skipped"><b><span>⊖</span> <i id="skipCount">0</i></b>Đã bỏ qua</div></section>
 <section class="section resultscard" id="resultsSection"><div class="sectionhead"><div><h2>▤ &nbsp; Kết quả (<span id="resultCount">0</span>)</h2><div class="small">Chưa có dữ liệu</div></div><span>›</span></div><div id="importResults"></div></section>
@@ -76,7 +76,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <label for="speed">Tốc độ đọc <b id="speedLabel" style="color:var(--gold)">1.1×</b></label><input id="speed" type="range" min=".6" max="2" step=".1" value="1.1">
 <label for="timer">Hẹn giờ ngủ</label><select id="timer"><option value="0">Không hẹn giờ</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="90">90 phút</option></select>
 <p class="small">Khi nghe truyện, app dùng một nguồn audio tiếng Việt cố định để ưu tiên phát nền; danh sách giọng Safari bên trên chỉ áp dụng cho nút “Nghe thử”. Điều khiển màn hình khóa và tua thời gian phụ thuộc phiên bản iOS/Safari. Thanh thời gian trong app là ước tính; tua sẽ đến câu gần nhất.</p></div>
-<p class="small">Xuất EPUB từ bộ truyện đang chọn. Có thể nhập bản sao JSON để khôi phục thư viện đã sao lưu.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất EPUB từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+<p class="small">Xuất toàn bộ bộ truyện đang chọn thành một file TXT. Có thể nhập bản sao JSON để khôi phục thư viện đã sao lưu.</p><div class="actions"><button id="exportLibraryEpub" class="primary">Xuất TXT từ thư viện</button><button id="importFile">Nhập bản sao JSON</button><input id="file" type="file" accept="application/json,.json" hidden></div>
 </section></div>
 </main>
 <nav class="bottom" aria-label="Điều hướng chính"><div class="bottominner"><button class="nav active" data-target="importSection"><span>⇩</span>Thu thập</button><button class="nav" data-target="librarySection"><span>▤</span>Thư viện</button><button class="nav" data-target="settingsSection"><span>⚙</span>Xuất & sao lưu</button></div></nav>
@@ -301,21 +301,14 @@ $('discover').onclick=async()=>{
 $('exportCollected').onclick=()=>{
  const ready=imports.filter(x=>x.ok&&String(x.text||'').trim());
  if(!ready.length){say('importStatus','Chưa có chương lấy thành công để xuất.');return}
- const title=(($('storyUrl').value.trim()&&(()=>{try{return new URL($('storyUrl').value.trim()).pathname.split('/').filter(Boolean).pop().replace(/[-_]+/g,' ')}catch{return ''}})())||ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
- const xml=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
- const enc=new TextEncoder(),files=[{name:'mimetype',data:'application/epub+zip'},{name:'META-INF/container.xml',data:'<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>'}];
- const ch=ready.map((c,i)=>({title:document.querySelector('[data-title="'+imports.indexOf(c)+'"]')?.value.trim()||c.title||('Chương '+(i+1)),text:document.querySelector('[data-text="'+imports.indexOf(c)+'"]')?.value??c.text}));
- const list=ch.map((c,i)=>'<li><a href="chapter'+(i+1)+'.xhtml">'+xml(c.title)+'</a></li>').join('');
- files.push({name:'OEBPS/nav.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="vi"><head><title>Mục lục</title><meta charset="utf-8"/></head><body><nav epub:type="toc"><h1>'+xml(title)+'</h1><ol>'+list+'</ol></nav></body></html>'});
-  const manifest=ch.map((c,i)=>'<item id="c'+i+'" href="chapter'+(i+1)+'.xhtml" media-type="application/xhtml+xml"/>').join('');
- files.push({name:'OEBPS/content.opf',data:'<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid" xml:lang="vi"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="uid">urn:uuid:'+Date.now()+'-gocnghe</dc:identifier><dc:title>'+xml(title)+'</dc:title><dc:language>vi</dc:language><meta property="dcterms:modified">'+new Date().toISOString().replace(/\.\d{3}Z$/,'Z')+'</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'+manifest+'</manifest><spine>'+ch.map((c,i)=>'<itemref idref="c'+i+'"/>').join('')+'</spine></package>'});
- ch.forEach((c,i)=>files.push({name:'OEBPS/chapter'+(i+1)+'.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" lang="vi"><head><title>'+xml(c.title)+'</title><meta charset="utf-8"/><style>body{font-family:serif;line-height:1.7;margin:5%}h1{text-align:center}p{white-space:pre-wrap;line-height:1.8}</style></head><body><h1>'+xml(c.title)+'</h1>'+String(c.text).split(/\n\s*\n/).map(p=>'<p>'+xml(p).replace(/\n/g,'<br/>')+'</p>').join('')+'</body></html>'}));
- const table=new Uint32Array(256);for(let n=0;n<256;n++){let v=n;for(let k=0;k<8;k++)v=(v&1)?(0xedb88320^(v>>>1)):(v>>>1);table[n]=v>>>0}
- const crc=data=>{let v=0xffffffff;for(const b of data)v=table[(v^b)&255]^(v>>>8);return(v^0xffffffff)>>>0};
- const locals=[],centrals=[];let offset=0;
- files.forEach(f=>{const n=enc.encode(f.name),d=enc.encode(f.data),cr=crc(d),l=new Uint8Array(30+n.length),v=new DataView(l.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint32(14,cr,true);v.setUint32(18,d.length,true);v.setUint32(22,d.length,true);v.setUint16(26,n.length,true);l.set(n,30);locals.push(l,d);const c=new Uint8Array(46+n.length),cv=new DataView(c.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x800,true);cv.setUint32(16,cr,true);cv.setUint32(20,d.length,true);cv.setUint32(24,d.length,true);cv.setUint16(28,n.length,true);cv.setUint32(42,offset,true);c.set(n,46);centrals.push(c);offset+=l.length+d.length});
- const cs=centrals.reduce((a,c)=>a+c.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cs,true);ev.setUint32(16,offset,true);
- const blob=new Blob([...locals,...centrals,end],{type:'application/epub+zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(title.replace(/[\\/:*?"<>|]+/g,' ').trim().replace(/\s+/g,'-').slice(0,80)||'truyen-da-gom')+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);say('importStatus','Đã tạo EPUB gồm '+ch.length+' chương lấy thành công. Hãy chọn Lưu vào Tệp trên iPhone.');
+ const title=(($('storyUrl').value.trim()&&(()=>{try{return new URL($('storyUrl').value.trim()).pathname.split('/').filter(Boolean).pop().replace(/[-_]+/g,' ')}catch{return ''}})())||ready[0].title||'Truyện đã gom').replace(/\\s+/g,' ').trim();
+ const body=ready.map((c,i)=>{
+  const index=imports.indexOf(c),t=document.querySelector('[data-title="'+index+'"]')?.value.trim()||c.title||('Chương '+(i+1));
+  const content=document.querySelector('[data-text="'+index+'"]')?.value??c.text;
+  return t+'\\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\\n\\n'+String(content||'').trim();
+ }).join('\\n\\n'+'-'.repeat(36)+'\\n\\n');
+ downloadTxt(title, title+'\\n'+'='.repeat(Math.min(60,Math.max(8,title.length)))+'\\n\\n'+body);
+ say('importStatus','Đã tạo file TXT gồm '+ready.length+' chương. Trên iPhone, chọn Lưu vào Tệp để lưu lại.');
 };
 $('saveImports').onclick=async()=>{
  const ready=imports.filter(x=>x.ok);
@@ -392,7 +385,25 @@ function exportEpub(){
  a.href=url;a.download=filename+'.epub';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
  say('libraryStatus','Đã tạo EPUB gồm '+chapters.length+' chương. Nội dung thư viện được giữ nguyên. Nếu iPhone hiện bảng chia sẻ, chọn Lưu vào Tệp.');
 }
-$('exportLibraryEpub').onclick=exportEpub;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
+function downloadTxt(title,content){
+ const safe=(title||'truyen').replace(/[\\\\/:*?"<>|]+/g,' ').trim().replace(/\\s+/g,'-').slice(0,80)||'truyen';
+ const blob=new Blob(['\\uFEFF',String(content||'')],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=safe+'.txt';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+function exportLibraryTxt(){
+ const b=book();if(!b){say('libraryStatus','Ông hãy chọn hoặc tạo bộ truyện trước nhé.');return}
+ const chapters=(b.chapters||[]).filter(c=>String(c.text||'').trim());
+ if(!chapters.length){say('libraryStatus','Bộ truyện này chưa có chương có nội dung để xuất.');return}
+ const body=chapters.map((c,i)=>{
+  const t=(c.title||('Chương '+(i+1))).trim();
+  return t+'\\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\\n\\n'+String(c.text||'').trim();
+ }).join('\\n\\n'+'-'.repeat(36)+'\\n\\n');
+ downloadTxt(b.title,b.title+'\\n'+'='.repeat(Math.min(60,Math.max(8,String(b.title||'').length)))+'\\n\\n'+body);
+ say('libraryStatus','Đã tạo file TXT gồm '+chapters.length+' chương. Thư viện vẫn được giữ nguyên; chọn Lưu vào Tệp trên iPhone để lưu file.');
+}
+$('exportLibraryEpub').onclick=exportLibraryTxt;$('importFile').onclick=()=>$('file').click();$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text()),a=Array.isArray(d)?d:d.library;if(!Array.isArray(a))throw 0;if(!confirm('Thay thư viện hiện tại bằng bản sao này?'))return;lib=a;bid=lib[0]?.id||'';cid=book()?.chapters[0]?.id||'';persist();if(!await saveLibraryNow())throw Error('Không lưu được thư viện');render();say('libraryStatus','Đã nhập bản sao.')}catch(e){say('libraryStatus','File sao lưu không hợp lệ.')}finally{e.target.value=''}};
 const tabGroups={
  importSection:['importSection','statsSection','resultsSection'],
  librarySection:['librarySection'],
