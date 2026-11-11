@@ -299,6 +299,9 @@ $('discover').onclick=async()=>{
     const label=m[2].replace(/<[^>]+>/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
     extracted.push({label,href:m[1].replace(/&amp;/g,'&')});
    }
+   // Also read rel=next/prev links and URLs exposed by public JSON-LD metadata.
+   for(const m of raw.matchAll(/<(?:link|a)\\b(?=[^>]*\\brel\\s*=\\s*["'][^"']*\\b(?:next|prev|previous)\\b)[^>]*\\bhref\\s*=\\s*["']([^"']+)["'][^>]*>/gi))extracted.push({label:'next',href:m[1].replace(/&amp;/g,'&')});
+   for(const m of raw.matchAll(/["'](?:url|@id)["']\\s*:\\s*["'](https?:\\/\\/[^"']+)["']/gi))extracted.push({label:'',href:m[1].replace(/\\\\\\//g,'/')});
    for(const m of raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g))extracted.push({label:'',href:m[0].replace(/[.,;]+$/,'')});
    const hrefs=new Map();
    for(const item of extracted){
@@ -316,7 +319,7 @@ $('discover').onclick=async()=>{
     const pathChapter=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(path);
     const readNumberRoute=/\/(?:read|doc|reader|doc-truyen)\/\d{1,8}\/?$/i.test(path);
     const numericTail=/\/\d{1,8}(?:\.html?)?\/?$/i.test(path);
-    const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&labelChapter);
+    const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path))));
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
     const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)));
@@ -331,6 +334,48 @@ $('discover').onclick=async()=>{
    }
    if(found.size>=maxFound)break;
    await sleep(200);
+  }
+  // Public sitemap discovery: robots.txt may advertise one or more sitemap files.
+  // Stay on the original host, cap requests, and never infer links beyond published URLs.
+  const sitemapQueue=new Set([
+   new URL('/robots.txt',url.origin).href,
+   new URL('/sitemap.xml',url.origin).href,
+   new URL('/sitemap_index.xml',url.origin).href,
+   new URL('/sitemap-index.xml',url.origin).href
+  ]);
+  const sitemapSeen=new Set(),sitemapFiles=[];
+  while(sitemapQueue.size&&sitemapSeen.size<8){
+   const sitemapUrl=sitemapQueue.values().next().value;sitemapQueue.delete(sitemapUrl);
+   if(sitemapSeen.has(sitemapUrl))continue;sitemapSeen.add(sitemapUrl);
+   try{
+    const res=await readerRequest(sitemapUrl,18000);if(!res.ok)continue;
+    const body=await res.text();
+    if(/performing security verification|verify you are human|captcha|cloudflare ray id|access denied/i.test(body))continue;
+    if(/robots\\.txt(?:\\?|$)/i.test(sitemapUrl)){
+     for(const m of body.matchAll(/^\\s*sitemap\\s*:\\s*(https?:\\/\\/[^\\s<]+)/gim)){
+      try{const u=new URL(m[1]);if(hostKey(u.hostname)===hostKey(url.hostname))sitemapQueue.add(u.href)}catch(e){}
+     }
+     continue;
+    }
+    const locs=[...body.matchAll(/<loc[^>]*>\\s*([^<]+?)\\s*<\\/loc>/gi)].map(m=>m[1].replace(/&amp;/g,'&').trim());
+    if(/<sitemapindex/i.test(body)){
+     for(const loc of locs){try{const u=new URL(loc);if(hostKey(u.hostname)===hostKey(url.hostname)&&sitemapQueue.size<12)sitemapQueue.add(u.href)}catch(e){}}
+     continue;
+    }
+    sitemapFiles.push(sitemapUrl);
+    for(const loc of locs){
+     try{
+      const u=new URL(loc);u.hash='';
+      if(hostKey(u.hostname)!==hostKey(url.hostname))continue;
+      const p=decodeURIComponent(u.pathname),identity=storySlugFromUrl(u.href);
+      const qChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\\d+$/.test(v));
+      const hasChapterWord=/(?:^|[\\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\\/_-]?\\d+|\\b)/i.test(p);
+      const numericId=/\\/\\d{4,8}(?:\\.html?)?\\/?$/i.test(p);
+      const belongs= (!!wanted&&norm(p).includes(wanted)) || (!!wanted&&identity===wanted) || (!!wanted&&p.toLowerCase().includes(wanted.replace(/-/g,'_')));
+      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href)found.add(u.href);
+     }catch(e){}
+    }
+   }catch(e){}
   }
   const patternRows=[...found].map(href=>{
    try{
