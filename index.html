@@ -351,13 +351,13 @@ $('discover').onclick=async()=>{
     const res=await readerRequest(sitemapUrl,18000);if(!res.ok)continue;
     const body=await res.text();
     if(/performing security verification|verify you are human|captcha|cloudflare ray id|access denied/i.test(body))continue;
-    if(/robots\\.txt(?:\\?|$)/i.test(sitemapUrl)){
-     for(const m of body.matchAll(/^\\s*sitemap\\s*:\\s*(https?:\\/\\/[^\\s<]+)/gim)){
+    if(/robots\.txt(?:\?|$)/i.test(sitemapUrl)){
+     for(const m of body.matchAll(/^\s*sitemap\s*:\s*(https?:\/\/[^\s<]+)/gim)){
       try{const u=new URL(m[1]);if(hostKey(u.hostname)===hostKey(url.hostname))sitemapQueue.add(u.href)}catch(e){}
      }
      continue;
     }
-    const locs=[...body.matchAll(/<loc[^>]*>\\s*([^<]+?)\\s*<\\/loc>/gi)].map(m=>m[1].replace(/&amp;/g,'&').trim());
+    const locs=[...body.matchAll(/<loc[^>]*>\s*([^<]+?)\s*<\/loc>/gi)].map(m=>m[1].replace(/&amp;/g,'&').trim());
     if(/<sitemapindex/i.test(body)){
      for(const loc of locs){try{const u=new URL(loc);if(hostKey(u.hostname)===hostKey(url.hostname)&&sitemapQueue.size<12)sitemapQueue.add(u.href)}catch(e){}}
      continue;
@@ -368,9 +368,9 @@ $('discover').onclick=async()=>{
       const u=new URL(loc);u.hash='';
       if(hostKey(u.hostname)!==hostKey(url.hostname))continue;
       const p=decodeURIComponent(u.pathname),identity=storySlugFromUrl(u.href);
-      const qChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\\d+$/.test(v));
-      const hasChapterWord=/(?:^|[\\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\\/_-]?\\d+|\\b)/i.test(p);
-      const numericId=/\\/\\d{4,8}(?:\\.html?)?\\/?$/i.test(p);
+      const qChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\d+$/.test(v));
+      const hasChapterWord=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(p);
+      const numericId=/\/\d{4,8}(?:\.html?)?\/?$/i.test(p);
       const belongs= (!!wanted&&norm(p).includes(wanted)) || (!!wanted&&identity===wanted) || (!!wanted&&p.toLowerCase().includes(wanted.replace(/-/g,'_')));
       if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href)found.add(u.href);
      }catch(e){}
