@@ -36,7 +36,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <label for="storyUrl">Link chương mẫu (ví dụ chương 51 của Sstruyen)</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link một chương có số chương và mã ID...">
 <div class="actions"><button class="primary" id="makePatternLinks" type="button">Tự tạo link chương theo mẫu</button><button id="discover" type="button">Dò link tự động (phụ)</button></div>
-<p class="small">Dán link của một chương thật. App sẽ nhận dạng số chương và mã ID trong URL, rồi tự tạo các link tiếp theo theo cùng quy luật. Link tạo ra vẫn được kiểm tra khi tải; link không tồn tại sẽ báo lỗi.</p>
+<p class="small">Dán một link chương mẫu. App nhận diện số chương trong đường dẫn hoặc tham số URL, rồi tạo link tiếp theo theo mẫu. Link trùng trong thư viện/bản nháp sẽ tự bỏ qua; link không tồn tại sẽ báo lỗi khi lấy.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
@@ -284,20 +284,35 @@ $('fetch').onclick=async()=>{
 $('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
- let path;
- try{path=decodeURIComponent(sample.pathname).replace(/\/+$/,'')}catch(e){path=sample.pathname.replace(/\/+$/,'')}
- // Hỗ trợ mẫu phổ biến dạng /ten-truyen-chuong-51-4089513 và /chapter-51.
- let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)(?:([-_])(\d+))?(\.html?)?$/i);
- let hasId=!!(m&&m[6]!==undefined),offset=hasId?Number(m[6])-Number(m[4]):0;
- let prefix,word,sep1,sep2,ext,chapterInSample;
- if(m){prefix=m[1];word=m[2];sep1=m[3];chapterInSample=Number(m[4]);sep2=m[5]||'';ext=m[7]||''}
- else{
-  // Một số website chỉ có số chương ở cuối URL, ví dụ /truyen/chuong/51/.
-  m=path.match(/^(.*?)(\/)(chuong|chapter|chap|tap|phan)(\/)(\d+)$/i);
-  if(m){prefix=m[1]+m[2]+m[3]+m[4];word='';sep1='';chapterInSample=Number(m[5]);sep2='';ext=''}
+ const original=sample.href;
+ let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='';
+ // 1) Dạng query: ?chapter=51, ?chuong=51, ?ep=51...
+ for(const [key,value] of sample.searchParams){
+  if(/^(?:chapter|chap|chuong|episode|ep|tap|chapter_no|chapter_num)$/i.test(key)&&/^\d{1,7}$/.test(value)){
+   strategy='query';paramName=key;chapterInSample=Number(value);break;
+  }
  }
- if(!m||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
-  say('importStatus','Chưa nhận ra quy luật URL. Hãy dán link một chương có dạng như ...chuong-51-4089513 (số chương và mã ID).');return;
+ // 2) Dạng slug: /ten-truyen-chuong-51-4089513 hoặc /chapter-51
+ if(!strategy){
+  let path;
+  try{path=decodeURIComponent(sample.pathname).replace(/\/+$/,'')}catch(e){path=sample.pathname.replace(/\/+$/,'')}
+  let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)(?:([-_])(\d+))?(\.html?)?$/i);
+  if(m){
+   strategy='slug';prefix=m[1];word=m[2];sep1=m[3];chapterInSample=Number(m[4]);sep2=m[5]||'';ext=m[7]||'';
+   if(m[6]!==undefined)offset=Number(m[6])-chapterInSample;
+  }else{
+   // 3) Dạng thư mục: /truyen/chapter/51
+   m=path.match(/^(.*?\/)(chuong|chapter|chap|tap|phan)(\/)(\d+)$/i);
+   if(m){strategy='folder';prefix=m[1]+m[2]+m[3];chapterInSample=Number(m[4])}
+   else{
+    // 4) Dạng ID chương: /read/123, /reader/123 hoặc /doc/123
+    m=path.match(/^(.*\/(?:read|reader|doc)\/)(\d+)(\/?)$/i);
+    if(m){strategy='reader-id';prefix=m[1];chapterInSample=Number(m[2]);ext=m[3]||''}
+   }
+  }
+ }
+ if(!strategy||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
+  say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ dạng chuong-51-4089513, /chapter/51, ?chapter=51 hoặc /read/123.');return;
  }
  const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'100',10)||100));
  let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
@@ -306,16 +321,21 @@ $('makePatternLinks').onclick=()=>{
  $('patternStartChapter').value=String(start);
  const urls=[];
  for(let n=start;n<start+count;n++){
-  const id=n+offset;
-  if(!Number.isSafeInteger(id)||id<0)continue;
-  const generatedPath=word===''?prefix+n+ext:prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
-  const u=new URL(sample.href);u.pathname=generatedPath;u.hash='';
+  const u=new URL(original);
+  if(strategy==='query')u.searchParams.set(paramName,String(n));
+  else if(strategy==='slug'){
+   const id=n+offset;if(!Number.isSafeInteger(id)||id<0)continue;
+   const generatedPath=prefix+word+sep1+n+(offset!==0?sep2+id:'')+ext;
+   u.pathname=generatedPath;
+  }else if(strategy==='folder')u.pathname=prefix+n;
+  else if(strategy==='reader-id')u.pathname=prefix+n+ext;
+  u.hash='';
   if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))urls.push(u.href);
  }
  $('urls').value=urls.join('\n');
  $('importProgress').max=Math.max(1,urls.length);$('importProgress').value=0;
  say('progressLabel','Đã tạo '+urls.length+' link chương mới từ chương '+start+' đến '+(start+count-1));
- say('importStatus',urls.length?'Đã tự tạo link theo mẫu URL, tự bỏ qua chương đã có trong thư viện/bản nháp. Kiểm tra danh sách rồi bấm “Lấy nội dung chương”.':'Không có link mới: các chương trong khoảng này có thể đã nằm trong thư viện hoặc bản nháp.');
+ say('importStatus',urls.length?'Đã tạo link theo cấu trúc URL nhận diện được; tự bỏ qua chương đã có trong thư viện/bản nháp. Kiểm tra danh sách rồi bấm “Lấy nội dung chương”.':'Không có link mới: các chương trong khoảng này có thể đã nằm trong thư viện hoặc bản nháp.');
  $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
 };
 $('discover').onclick=async()=>{
