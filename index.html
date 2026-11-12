@@ -33,10 +33,10 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
-<label for="storyUrl">Link chương mẫu (ví dụ chương 51 của Sstruyen)</label>
-<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link một chương có số chương và mã ID...">
-<div class="actions"><button class="primary" id="makePatternLinks" type="button">Tự tạo link chương theo mẫu</button><button id="discover" type="button">Dò link tự động (phụ)</button></div>
-<p class="small">Dán một link chương mẫu. App nhận diện số chương trong đường dẫn hoặc tham số URL, rồi tạo link tiếp theo theo mẫu. Link trùng trong thư viện/bản nháp sẽ tự bỏ qua; link không tồn tại sẽ báo lỗi khi lấy.</p>
+<label for="storyUrl">Link trang truyện</label>
+<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link trang giới thiệu hoặc trang truyện...">
+<div class="actions"><button class="primary" id="discover" type="button">Tự tìm &amp; tạo link chương</button><button id="makePatternLinks" type="button">Tạo theo link chương mẫu (phụ)</button></div>
+<p class="small">Chỉ cần dán link trang truyện rồi bấm “Tự tìm &amp; tạo link chương”. App sẽ tìm link chương trong trang, lần theo phân trang và các địa chỉ công khai cùng website, tối đa 200 link mỗi lượt. Link đã có trong thư viện/bản nháp sẽ tự bỏ qua.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
