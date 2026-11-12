@@ -343,7 +343,7 @@ $('discover').onclick=async()=>{
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
  $('discover').disabled=true;
  $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
- say('importStatus','Đang phân tích trang truyện, mục lục và các trang chương…');
+ say('importStatus','Đã nhận link. Đang tạo các đường dẫn chương…');
  try{
   const norm=v=>decodeURIComponent(String(v||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const wanted=storySlugFromUrl(url.href);
@@ -358,6 +358,7 @@ $('discover').onclick=async()=>{
   let routeBase='';
   try{
    const routeUrl=new URL(url.href);
+   routeUrl.search='';routeUrl.hash='';
    const path=decodeURIComponent(routeUrl.pathname);
    const numericTail=path.match(/\/(\d{1,7})\/?$/);
    if(numericTail){routeUrl.pathname=path.replace(/\/(\d{1,7})\/?$/,'/');routeStart=Number(numericTail[1]);}
@@ -380,7 +381,6 @@ $('discover').onclick=async()=>{
    $('urls').value=generated.join('\n');
    $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
    say('skipCount',skippedCount);
-   renderImports();
    say('progressLabel','Đã tạo '+generated.length+' link theo quy luật URL /tên-truyện/số-chương/.');
    say('importStatus',generated.length?'Đã nhận dạng URL chương và tạo '+generated.length+' link mới. Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để tiếp tục.':'Không có link mới: các chương theo quy luật này đã có trong thư viện hoặc bản nháp.');
    return;
