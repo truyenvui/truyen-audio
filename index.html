@@ -285,7 +285,7 @@ $('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
- let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='';
+ let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false;
  // 1) Dạng query: ?chapter=51, ?chuong=51, ?ep=51...
  for(const [key,value] of sample.searchParams){
   if(/^(?:chapter|chap|chuong|episode|ep|tap|chapter_no|chapter_num)$/i.test(key)&&/^\d{1,7}$/.test(value)){
@@ -299,7 +299,7 @@ $('makePatternLinks').onclick=()=>{
   let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)(?:([-_])(\d+))?(\.html?)?$/i);
   if(m){
    strategy='slug';prefix=m[1];word=m[2];sep1=m[3];chapterInSample=Number(m[4]);sep2=m[5]||'';ext=m[7]||'';
-   if(m[6]!==undefined)offset=Number(m[6])-chapterInSample;
+   if(m[6]!==undefined){hasId=true;offset=Number(m[6])-chapterInSample;}
   }else{
    // 3) Dạng thư mục: /truyen/chapter/51
    m=path.match(/^(.*?\/)(chuong|chapter|chap|tap|phan)(\/)(\d+)$/i);
@@ -325,7 +325,7 @@ $('makePatternLinks').onclick=()=>{
   if(strategy==='query')u.searchParams.set(paramName,String(n));
   else if(strategy==='slug'){
    const id=n+offset;if(!Number.isSafeInteger(id)||id<0)continue;
-   const generatedPath=prefix+word+sep1+n+(offset!==0?sep2+id:'')+ext;
+   const generatedPath=prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
    u.pathname=generatedPath;
   }else if(strategy==='folder')u.pathname=prefix+n;
   else if(strategy==='reader-id')u.pathname=prefix+n+ext;
