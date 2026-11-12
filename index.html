@@ -33,13 +33,15 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
-<label for="storyUrl">Link trang truyện</label>
-<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link truyện vào đây...">
-<div class="actions"><button class="primary" id="discover" type="button">Tìm link chương tự động</button></div><p class="small">Web lần theo liên kết phân trang và chương do website công khai cung cấp, giữ thứ tự thực tế; không tự bịa link theo số.</p>
+<label for="storyUrl">Link chương mẫu (ví dụ chương 51 của Sstruyen)</label>
+<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link một chương có số chương và mã ID...">
+<div class="actions"><button class="primary" id="makePatternLinks" type="button">Tự tạo link chương theo mẫu</button><button id="discover" type="button">Dò link tự động (phụ)</button></div>
+<p class="small">Dán link của một chương thật. App sẽ nhận dạng số chương và mã ID trong URL, rồi tự tạo các link tiếp theo theo cùng quy luật. Link tạo ra vẫn được kiểm tra khi tải; link không tồn tại sẽ báo lỗi.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
-<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="maxDiscoverPages">Giới hạn số link muốn tìm (tối đa 200)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="20" placeholder="Ví dụ: 8"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="patternStartChapter">Chương bắt đầu tạo link</label><input id="patternStartChapter" type="number" inputmode="numeric" min="1" max="999999" value="1">
+<label for="maxDiscoverPages">Số link muốn tự tạo (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="100" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -279,6 +281,43 @@ $('fetch').onclick=async()=>{
   say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
+$('makePatternLinks').onclick=()=>{
+ let sample;
+ try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
+ let path;
+ try{path=decodeURIComponent(sample.pathname).replace(/\\/+$/,'')}catch(e){path=sample.pathname.replace(/\\/+$/,'')}
+ // Hỗ trợ mẫu phổ biến dạng /ten-truyen-chuong-51-4089513 và /chapter-51.
+ let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\\d+)(?:([-_])(\\d+))?(\\.html?)?$/i);
+ let hasId=!!(m&&m[6]!==undefined),offset=hasId?Number(m[6])-Number(m[4]):0;
+ let prefix,word,sep1,sep2,ext,chapterInSample;
+ if(m){prefix=m[1];word=m[2];sep1=m[3];chapterInSample=Number(m[4]);sep2=m[5]||'';ext=m[7]||''}
+ else{
+  // Một số website chỉ có số chương ở cuối URL, ví dụ /truyen/chuong/51/.
+  m=path.match(/^(.*?)(\\/)(chuong|chapter|chap|tap|phan)(\\/)(\\d+)$/i);
+  if(m){prefix=m[1]+m[2]+m[3]+m[4];word='';sep1='';chapterInSample=Number(m[5]);sep2='';ext=''}
+ }
+ if(!m||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
+  say('importStatus','Chưa nhận ra quy luật URL. Hãy dán link một chương có dạng như ...chuong-51-4089513 (số chương và mã ID).');return;
+ }
+ const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'100',10)||100));
+ let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
+ const known=maxKnownChapter(sample.href);
+ if(start<=known)start=known+1;
+ $('patternStartChapter').value=String(start);
+ const urls=[];
+ for(let n=start;n<start+count;n++){
+  const id=n+offset;
+  if(!Number.isSafeInteger(id)||id<0)continue;
+  const generatedPath=m[3]==='/'?prefix+n+ext:prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
+  const u=new URL(sample.href);u.pathname=generatedPath;u.hash='';
+  if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))urls.push(u.href);
+ }
+ $('urls').value=urls.join('\\n');
+ $('importProgress').max=Math.max(1,urls.length);$('importProgress').value=0;
+ say('progressLabel','Đã tạo '+urls.length+' link chương mới từ chương '+start+' đến '+(start+count-1));
+ say('importStatus',urls.length?'Đã tự tạo link theo mẫu URL, tự bỏ qua chương đã có trong thư viện/bản nháp. Kiểm tra danh sách rồi bấm “Lấy nội dung chương”.':'Không có link mới: các chương trong khoảng này có thể đã nằm trong thư viện hoặc bản nháp.');
+ $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
+};
 $('discover').onclick=async()=>{
  let url;
  try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
