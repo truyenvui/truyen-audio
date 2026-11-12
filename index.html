@@ -733,38 +733,44 @@ $('searchBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('books').
 $('settingsBtn').onclick=()=>showTab('settingsSection');
 // Trình tạo link chương tối giản: không gọi mạng, không dò mục lục.
 $('discover').onclick=()=>{
- const btn=$('discover');
  try{
-  const raw=$('storyUrl').value.trim()||$('urls').value.split(/[\\s,]+/).map(x=>x.trim()).filter(Boolean)[0]||'';
+  const raw=$('storyUrl').value.trim()||$('urls').value.split(/[\s,]+/).map(x=>x.trim()).filter(Boolean)[0]||'';
   if(!raw){$('importStatus').textContent='Ông dán link chương đầu tiên vào ô phía trên nhé.';return;}
   const url=new URL(normalizeStoryUrl(raw));
-  if(!/^https?:$/.test(url.protocol))throw Error('Link phải bắt đầu bằng http:// hoặc https://');
   url.hash='';
-  const path=decodeURIComponent(url.pathname);
-  const tail=path.match(/\/(\d{1,7})\/?$/);
-  let start=1,basePath=path;
-  if(tail){start=Number(tail[1]);basePath=path.replace(/\/(\d{1,7})\/?$/,'/');}
+  const originalPath=url.pathname;
+  const decodedPath=decodeURIComponent(originalPath);
+  const tail=decodedPath.match(/\/(\d{1,7})\/?$/);
+  let startNo=1,basePath=decodedPath;
+  if(tail){
+   startNo=Number(tail[1]);
+   basePath=decodedPath.replace(/\/(\d{1,7})\/?$/,'/');
+  }
   if(!basePath.endsWith('/'))basePath+='/';
   const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value,10)||200));
-  const urls=[];
-  for(let n=0;n<count;n++){
-   const chapterNo=start+n;
-   const u=new URL(url.origin);
-   u.pathname=n===0?url.pathname:(basePath+chapterNo+'/');
-   u.search=url.search;
-   if(n===0&&tail)u.pathname=url.pathname;
-   u.hash='';
-   const href=u.href;
-   if(!isAlreadySaved(href)&&!isAlreadyImported(href)&&!urls.includes(href))urls.push(href);
+  const saved=new Set();
+  for(const b of lib||[])for(const c of (b.chapters||[]))if(c.sourceUrl){
+   try{const u=new URL(c.sourceUrl);u.hash='';saved.add(u.href)}catch(e){}
   }
-  $('urls').value=urls.join('\n');
-  $('importProgress').max=Math.max(1,urls.length);
+  for(const x of imports||[])if(x&&x.url){
+   try{const u=new URL(x.url);u.hash='';saved.add(u.href)}catch(e){}
+  }
+  const generated=[];
+  for(let i=0;i<count;i++){
+   const u=new URL(url.href);
+   if(i===0)u.pathname=originalPath;
+   else u.pathname=basePath+(startNo+i)+'/';
+   u.hash='';
+   if(!saved.has(u.href)&&!generated.includes(u.href))generated.push(u.href);
+  }
+  $('urls').value=generated.join('\n');
+  $('importProgress').max=Math.max(1,generated.length);
   $('importProgress').value=0;
-  skippedCount=count-urls.length;
+  skippedCount=count-generated.length;
   $('skipCount').textContent=String(skippedCount);
-  $('progressLabel').textContent='Đã tạo '+urls.length+' link chương mới.';
-  $('importStatus').textContent=urls.length
-   ?'Đã tạo '+urls.length+' link theo dạng URL gốc, /2/, /3/… Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để lấy truyện.'
+  $('progressLabel').textContent='Đã tạo '+generated.length+' link chương mới.';
+  $('importStatus').textContent=generated.length
+   ?'Đã tạo '+generated.length+' link. Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để lấy truyện.'
    :'Không có link mới: các link trong lượt này đã có trong thư viện hoặc bản nháp.';
   $('discoverHelp').classList.add('hidden');
   $('discoverHelp').textContent='';
