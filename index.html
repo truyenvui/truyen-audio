@@ -388,8 +388,44 @@ $('discover').onclick=async()=>{
     }
    }catch(e){}
   }
-  // Không tự dựng URL chương từ mẫu số hoặc đoán /2/, /3/...
-  // Chỉ dùng link chương thật và link phân trang thật đã được đọc từ website.
+  // Bổ sung các chương bị khuyết giữa hai link thật khi website dùng mẫu URL số tuyến tính.
+  // Chỉ suy ra đoạn nằm giữa các chương đã được website công khai; không tự đoán chương đầu/cuối.
+  const observed=[...found].map(href=>({href,no:chapterNo(href)})).filter(x=>Number.isFinite(x.no)&&x.no!==Number.MAX_SAFE_INTEGER);
+  const generated=new Set();
+  const byShape=new Map();
+  for(const item of observed){
+   try{
+    const u=new URL(item.href),path=decodeURIComponent(u.pathname);
+    const nums=[...path.matchAll(/\d+/g)].map(m=>Number(m[0]));
+    if(!nums.length)continue;
+    const shape=path.replace(/\d+/g,'#');
+    const key=hostKey(u.hostname)+'|'+shape+'|'+u.search;
+    if(!byShape.has(key))byShape.set(key,[]);
+    byShape.get(key).push({item,u,path,nums});
+   }catch(e){}
+  }
+  for(const group of byShape.values()){
+   const samples=group.sort((a,b)=>a.item.no-b.item.no);
+   for(let i=0;i<samples.length;i++)for(let j=i+1;j<samples.length;j++){
+    const a=samples[i],b=samples[j],chapterDelta=b.item.no-a.item.no;
+    if(chapterDelta<2||a.nums.length!==b.nums.length)continue;
+    const steps=a.nums.map((n,k)=>(b.nums[k]-n)/chapterDelta);
+    if(steps.some(step=>!Number.isInteger(step)))continue;
+    for(let chapter=a.item.no+1;chapter<b.item.no&&generated.size<200;chapter++){
+     let token=0;
+     const nextPath=a.path.replace(/\d+/g,()=>{
+      const value=a.nums[token]+steps[token]*(chapter-a.item.no);token++;
+      return String(value);
+     });
+     try{
+      const candidate=new URL(a.u.href);candidate.pathname=nextPath;
+      const href=candidate.href;
+      if(!found.has(href)&&!isAlreadySaved(href)&&!isAlreadyImported(href))generated.add(href);
+     }catch(e){}
+    }
+   }
+  }
+  for(const href of generated){if(found.size>=maxFound)break;found.add(href)}
   const sequenceIndex=new Map(foundSequence.map((u,i)=>[u,i]));
   const allResults=[...found].sort((a,b)=>{
    const na=chapterOrder.get(a)??chapterNo(a),nb=chapterOrder.get(b)??chapterNo(b);
@@ -408,7 +444,7 @@ $('discover').onclick=async()=>{
    say('importStatus',explanation+' Thư viện không bị thay đổi.');
    renderImports();return;
   }
-  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương. Bỏ qua '+skippedCount+' link đã có; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
+  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương (có thể gồm link được suy ra từ mẫu URL đã xác nhận). Bỏ qua '+skippedCount+' link đã có; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
  }catch(e){
   const message=e.message||'Không tìm thấy link chương.';
   say('importStatus',message);
