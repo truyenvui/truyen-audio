@@ -490,6 +490,40 @@ $('discover').onclick=async()=>{
     }
    }
   }
+  // Học quy luật URL từ ít nhất 3 link chương công khai có cùng cấu trúc.
+  // Chỉ ngoại suy khi mọi bước số ở các mẫu liên tiếp đều tuyến tính và nhất quán.
+  const learnedPatterns=[];
+  for(const group of byShape.values()){
+   const samples=group.sort((a,b)=>a.item.no-b.item.no);
+   if(samples.length<3)continue;
+   const slopes=[];
+   let valid=true;
+   for(let i=1;i<samples.length;i++){
+    const a=samples[i-1],b=samples[i],delta=b.item.no-a.item.no;
+    if(delta<=0||a.nums.length!==b.nums.length){valid=false;break}
+    const steps=a.nums.map((n,k)=>(b.nums[k]-n)/delta);
+    if(steps.some(step=>!Number.isInteger(step))){valid=false;break}
+    if(slopes.length&&steps.some((step,k)=>step!==slopes[0][k])){valid=false;break}
+    slopes.push(steps);
+   }
+   if(!valid||!slopes.length)continue;
+   const last=samples[samples.length-1],steps=slopes[0];
+   const limit=Math.min(maxFound,declaredChapterTotal>last.item.no?declaredChapterTotal-last.item.no:maxFound);
+   for(let offset=1;offset<=limit&&found.size+generated.size<maxFound;offset++){
+    const chapter=last.item.no+offset;
+    let token=0;
+    const nextPath=last.path.replace(/\\d+/g,()=>{
+     const value=last.nums[token]+steps[token]*offset;token++;
+     return String(value);
+    });
+    try{
+     const candidate=new URL(last.u.href);candidate.pathname=nextPath;
+     const href=candidate.href;
+     if(!found.has(href)&&!isAlreadySaved(href)&&!isAlreadyImported(href))generated.add(href);
+    }catch(e){}
+   }
+   learnedPatterns.push({last:last.item.no,count:generated.size});
+  }
   for(const href of generated){if(found.size>=maxFound)break;found.add(href)}
   const sequenceIndex=new Map(foundSequence.map((u,i)=>[u,i]));
   const allResults=[...found].sort((a,b)=>{
