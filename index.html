@@ -735,7 +735,7 @@ $('settingsBtn').onclick=()=>showTab('settingsSection');
 $('discover').onclick=()=>{
  const btn=$('discover');
  try{
-  const raw=$('storyUrl').value.trim();
+  const raw=$('storyUrl').value.trim()||$('urls').value.split(/[\\s,]+/).map(x=>x.trim()).filter(Boolean)[0]||'';
   if(!raw){$('importStatus').textContent='Ông dán link chương đầu tiên vào ô phía trên nhé.';return;}
   const url=new URL(normalizeStoryUrl(raw));
   if(!/^https?:$/.test(url.protocol))throw Error('Link phải bắt đầu bằng http:// hoặc https://');
