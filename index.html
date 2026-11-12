@@ -741,9 +741,9 @@ $('discover').onclick=()=>{
   if(!/^https?:$/.test(url.protocol))throw Error('Link phải bắt đầu bằng http:// hoặc https://');
   url.hash='';
   const path=decodeURIComponent(url.pathname);
-  const tail=path.match(/\\/(\\d{1,7})\\/?$/);
+  const tail=path.match(/\/(\d{1,7})\/?$/);
   let start=1,basePath=path;
-  if(tail){start=Number(tail[1]);basePath=path.replace(/\\/(\\d{1,7})\\/?$/,'/');}
+  if(tail){start=Number(tail[1]);basePath=path.replace(/\/(\d{1,7})\/?$/,'/');}
   if(!basePath.endsWith('/'))basePath+='/';
   const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value,10)||200));
   const urls=[];
@@ -757,7 +757,7 @@ $('discover').onclick=()=>{
    const href=u.href;
    if(!isAlreadySaved(href)&&!isAlreadyImported(href)&&!urls.includes(href))urls.push(href);
   }
-  $('urls').value=urls.join('\\n');
+  $('urls').value=urls.join('\n');
   $('importProgress').max=Math.max(1,urls.length);
   $('importProgress').value=0;
   skippedCount=count-urls.length;
