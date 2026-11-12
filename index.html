@@ -285,15 +285,15 @@ $('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  let path;
- try{path=decodeURIComponent(sample.pathname).replace(/\\/+$/,'')}catch(e){path=sample.pathname.replace(/\\/+$/,'')}
+ try{path=decodeURIComponent(sample.pathname).replace(/\/+$/,'')}catch(e){path=sample.pathname.replace(/\/+$/,'')}
  // Hỗ trợ mẫu phổ biến dạng /ten-truyen-chuong-51-4089513 và /chapter-51.
- let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\\d+)(?:([-_])(\\d+))?(\\.html?)?$/i);
+ let m=path.match(/^(.*?)(chuong|chapter|chap|tap|phan)([-_]?)(\d+)(?:([-_])(\d+))?(\.html?)?$/i);
  let hasId=!!(m&&m[6]!==undefined),offset=hasId?Number(m[6])-Number(m[4]):0;
  let prefix,word,sep1,sep2,ext,chapterInSample;
  if(m){prefix=m[1];word=m[2];sep1=m[3];chapterInSample=Number(m[4]);sep2=m[5]||'';ext=m[7]||''}
  else{
   // Một số website chỉ có số chương ở cuối URL, ví dụ /truyen/chuong/51/.
-  m=path.match(/^(.*?)(\\/)(chuong|chapter|chap|tap|phan)(\\/)(\\d+)$/i);
+  m=path.match(/^(.*?)(\/)(chuong|chapter|chap|tap|phan)(\/)(\d+)$/i);
   if(m){prefix=m[1]+m[2]+m[3]+m[4];word='';sep1='';chapterInSample=Number(m[5]);sep2='';ext=''}
  }
  if(!m||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
@@ -312,7 +312,7 @@ $('makePatternLinks').onclick=()=>{
   const u=new URL(sample.href);u.pathname=generatedPath;u.hash='';
   if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))urls.push(u.href);
  }
- $('urls').value=urls.join('\\n');
+ $('urls').value=urls.join('\n');
  $('importProgress').max=Math.max(1,urls.length);$('importProgress').value=0;
  say('progressLabel','Đã tạo '+urls.length+' link chương mới từ chương '+start+' đến '+(start+count-1));
  say('importStatus',urls.length?'Đã tự tạo link theo mẫu URL, tự bỏ qua chương đã có trong thư viện/bản nháp. Kiểm tra danh sách rồi bấm “Lấy nội dung chương”.':'Không có link mới: các chương trong khoảng này có thể đã nằm trong thư viện hoặc bản nháp.');
