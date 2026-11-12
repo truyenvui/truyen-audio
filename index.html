@@ -35,13 +35,13 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <label for="storyUrl">Link mở nội dung truyện</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link mở thẳng nội dung truyện hoặc trang có danh sách chương...">
-<div class="actions"><button class="primary" id="discover" type="button">Tự tìm link &amp; học quy luật URL</button></div>
-<p class="small">Chỉ cần dán link mở thẳng nội dung truyện rồi bấm nút bên trên. App sẽ tìm link công khai, học quy luật URL khi có đủ mẫu và tự tạo link chương phù hợp, tối đa 200 link mỗi lượt. Link đã có trong thư viện/bản nháp sẽ tự bỏ qua.</p>
+<div class="actions"><button class="primary" id="discover" type="button">Tạo link chương tự động</button></div>
+<p class="small">Dán link chương đầu tiên. App giữ nguyên link đó rồi tự nối /2/, /3/, /4/… tối đa 200 link mỗi lượt. Link đã có trong thư viện/bản nháp sẽ được bỏ qua.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="patternStartChapter">Chương bắt đầu tạo link</label><input id="patternStartChapter" type="number" inputmode="numeric" min="1" max="999999" value="1">
-<label for="maxDiscoverPages">Số link muốn tự tạo (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="100" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<label for="maxDiscoverPages">Số link muốn tự tạo (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -729,7 +729,49 @@ function showTab(target){
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>showTab(b.dataset.target));
 initLibraryStorage();
 showTab('importSection');
-$('searchBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('books').focus(),250)};$('settingsBtn').onclick=()=>showTab('settingsSection');
+$('searchBtn').onclick=()=>{showTab('librarySection');setTimeout(()=>$('books').focus(),250)};
+$('settingsBtn').onclick=()=>showTab('settingsSection');
+// Trình tạo link chương tối giản: không gọi mạng, không dò mục lục.
+$('discover').onclick=()=>{
+ const btn=$('discover');
+ try{
+  const raw=$('storyUrl').value.trim();
+  if(!raw){$('importStatus').textContent='Ông dán link chương đầu tiên vào ô phía trên nhé.';return;}
+  const url=new URL(normalizeStoryUrl(raw));
+  if(!/^https?:$/.test(url.protocol))throw Error('Link phải bắt đầu bằng http:// hoặc https://');
+  url.hash='';
+  const path=decodeURIComponent(url.pathname);
+  const tail=path.match(/\\/(\\d{1,7})\\/?$/);
+  let start=1,basePath=path;
+  if(tail){start=Number(tail[1]);basePath=path.replace(/\\/(\\d{1,7})\\/?$/,'/');}
+  if(!basePath.endsWith('/'))basePath+='/';
+  const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value,10)||200));
+  const urls=[];
+  for(let n=0;n<count;n++){
+   const chapterNo=start+n;
+   const u=new URL(url.origin);
+   u.pathname=n===0?url.pathname:(basePath+chapterNo+'/');
+   u.search=url.search;
+   if(n===0&&tail)u.pathname=url.pathname;
+   u.hash='';
+   const href=u.href;
+   if(!isAlreadySaved(href)&&!isAlreadyImported(href)&&!urls.includes(href))urls.push(href);
+  }
+  $('urls').value=urls.join('\\n');
+  $('importProgress').max=Math.max(1,urls.length);
+  $('importProgress').value=0;
+  skippedCount=count-urls.length;
+  $('skipCount').textContent=String(skippedCount);
+  $('progressLabel').textContent='Đã tạo '+urls.length+' link chương mới.';
+  $('importStatus').textContent=urls.length
+   ?'Đã tạo '+urls.length+' link theo dạng URL gốc, /2/, /3/… Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để lấy truyện.'
+   :'Không có link mới: các link trong lượt này đã có trong thư viện hoặc bản nháp.';
+  $('discoverHelp').classList.add('hidden');
+  $('discoverHelp').textContent='';
+ }catch(e){
+  $('importStatus').textContent='Không tạo được link: '+(e&&e.message?e.message:'hãy kiểm tra lại URL.');
+ }
+};
 })();
 </script><script>if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
 </body></html>
