@@ -372,6 +372,19 @@ $('discover').onclick=async()=>{
     found.add(generated);chapterOrder.set(generated,n);foundSequence.push(generated);
    }
   }else if(inputChapterNo!==Number.MAX_SAFE_INTEGER){found.add(url.href);chapterOrder.set(url.href,inputChapterNo);foundSequence.push(url.href)}
+  // Với URL dạng /ten-truyen/ hoặc /ten-truyen/2/, tạo link ngay tại chỗ.
+  // Không gọi dịch vụ phân tích hay sitemap khi quy luật số cuối URL đã rõ.
+  if(routeBase){
+   const generated=[...found].filter(href=>!isAlreadySaved(href)&&!isAlreadyImported(href)).slice(0,200);
+   skippedCount=found.size-generated.length;
+   $('urls').value=generated.join('\\n');
+   $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
+   say('skipCount',skippedCount);
+   renderImports();
+   say('progressLabel','Đã tạo '+generated.length+' link theo quy luật URL /tên-truyện/số-chương/.');
+   say('importStatus',generated.length?'Đã nhận dạng URL chương và tạo '+generated.length+' link mới. Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để tiếp tục.':'Không có link mới: các chương theo quy luật này đã có trong thư viện hoặc bản nháp.');
+   return;
+  }
   let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
    const pageUrl=pages.shift();
