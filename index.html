@@ -33,10 +33,10 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
-<label for="storyUrl">Link trang truyện</label>
-<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link trang giới thiệu hoặc trang truyện...">
+<label for="storyUrl">Link mở nội dung truyện</label>
+<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link mở thẳng nội dung truyện hoặc trang có danh sách chương...">
 <div class="actions"><button class="primary" id="discover" type="button">Tự tìm link &amp; học quy luật URL</button></div>
-<p class="small">Chỉ cần dán link trang truyện rồi bấm nút bên trên. App sẽ tìm link công khai, học quy luật URL khi có đủ mẫu và tự tạo link chương phù hợp, tối đa 200 link mỗi lượt. Link đã có trong thư viện/bản nháp sẽ tự bỏ qua.</p>
+<p class="small">Chỉ cần dán link mở thẳng nội dung truyện rồi bấm nút bên trên. App sẽ tìm link công khai, học quy luật URL khi có đủ mẫu và tự tạo link chương phù hợp, tối đa 200 link mỗi lượt. Link đã có trong thư viện/bản nháp sẽ tự bỏ qua.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
@@ -350,6 +350,9 @@ $('discover').onclick=async()=>{
   const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
   const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
   const pages=[url.href],seenPages=new Set(),found=new Set(),chapterOrder=new Map(),foundSequence=[];
+  // Nếu URL dán vào mở thẳng một chương, coi chính URL đó là mẫu/chương đầu vào.
+  const inputChapterNo=chapterNo(url.href);
+  if(inputChapterNo!==Number.MAX_SAFE_INTEGER){found.add(url.href);chapterOrder.set(url.href,inputChapterNo);foundSequence.push(url.href)}
   const maxPages=220,maxFound=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'200',10)||200));
   let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
@@ -397,7 +400,7 @@ $('discover').onclick=async()=>{
       found.add(u.href);
       // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
       // Không tự đoán ID: chỉ tiếp tục khi website thực sự công bố URL chương kế.
-      const isNextLink=/^(?:next|sau|tiếp|tiếp theo|chương sau|chapter next|»|›|→)$/i.test(label);
+      const isNextLink=/^(?:next|sau|tiếp|tiếp theo|chương sau|chương tiếp theo|đọc chương tiếp|chapter next|next chapter|»|›|→)$/i.test(label);
       if(isNextLink&&!seenPages.has(u.href)&&!pages.includes(u.href)&&seenPages.size+pages.length<220)pages.push(u.href);
      }
     const q=[...u.searchParams.entries()];
