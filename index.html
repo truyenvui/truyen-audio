@@ -377,7 +377,7 @@ $('discover').onclick=async()=>{
   if(routeBase){
    const generated=[...found].filter(href=>!isAlreadySaved(href)&&!isAlreadyImported(href)).slice(0,200);
    skippedCount=found.size-generated.length;
-   $('urls').value=generated.join('\\n');
+   $('urls').value=generated.join('\n');
    $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
    say('skipCount',skippedCount);
    renderImports();
