@@ -281,7 +281,7 @@ $('fetch').onclick=async()=>{
   say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
-$('makePatternLinks').onclick=()=>{
+if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
