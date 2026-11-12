@@ -333,7 +333,7 @@ $('discover').onclick=async()=>{
     const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path))));
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
-    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)));
+    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter));
     if(u.href!==url.href&&looksChapter&&sameStory)found.add(u.href);
     const q=[...u.searchParams.entries()];
     const queryPage=q.some(([k,v])=>/^(?:page|paged|p|trang|page_num|pageNumber)$/i.test(k)&&/^\d+$/.test(v));
@@ -408,7 +408,7 @@ $('discover').onclick=async()=>{
    say('importStatus',explanation+' Thư viện không bị thay đổi.');
    renderImports();return;
   }
-  say('importStatus',singlePageChapter?'Đã nhận diện trang hiện tại là truyện một chương. Ông có thể bấm “Lấy nội dung chương”.':'Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương ('+patternRows.length+' link có mẫu số chương rõ ràng; tạo thêm '+generated+' link theo mẫu đã kiểm chứng). Bỏ qua '+skippedCount+' link trùng chắc chắn; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
+  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương. Bỏ qua '+skippedCount+' link đã có; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
  }catch(e){
   const message=e.message||'Không tìm thấy link chương.';
   say('importStatus',message);
