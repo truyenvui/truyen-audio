@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "goc-nghe-truyen-v54";
+const CACHE_NAME = "goc-nghe-truyen-v55";
 const BASE = self.registration.scope;
 
 self.addEventListener("install", (event) => {
