@@ -512,7 +512,7 @@ $('discover').onclick=async()=>{
    for(let offset=1;offset<=limit&&found.size+generated.size<maxFound;offset++){
     const chapter=last.item.no+offset;
     let token=0;
-    const nextPath=last.path.replace(/\\d+/g,()=>{
+    const nextPath=last.path.replace(/\d+/g,()=>{
      const value=last.nums[token]+steps[token]*offset;token++;
      return String(value);
     });
