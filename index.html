@@ -350,7 +350,7 @@ $('discover').onclick=async()=>{
   const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
   const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
   const pages=[url.href],seenPages=new Set(),found=new Set(),chapterOrder=new Map(),foundSequence=[];
-  const maxPages=40,maxFound=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'200',10)||200));
+  const maxPages=220,maxFound=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'200',10)||200));
   let declaredChapterTotal=0;
   while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
    const pageUrl=pages.shift();
@@ -393,7 +393,13 @@ $('discover').onclick=async()=>{
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
     const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter));
-    if(u.href!==url.href&&looksChapter&&sameStory)found.add(u.href);
+    if(u.href!==url.href&&looksChapter&&sameStory){
+      found.add(u.href);
+      // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
+      // Không tự đoán ID: chỉ tiếp tục khi website thực sự công bố URL chương kế.
+      const isNextLink=/^(?:next|sau|tiếp|tiếp theo|chương sau|chapter next|»|›|→)$/i.test(label);
+      if(isNextLink&&!seenPages.has(u.href)&&!pages.includes(u.href)&&seenPages.size+pages.length<220)pages.push(u.href);
+     }
     const q=[...u.searchParams.entries()];
     const queryPage=q.some(([k,v])=>/^(?:page|paged|p|trang|page_num|pageNumber)$/i.test(k)&&/^\d+$/.test(v));
     const pathPage=/\/(?:page|trang)\/\d+\/?$/i.test(path);
