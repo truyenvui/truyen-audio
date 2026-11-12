@@ -308,7 +308,7 @@ $('makePatternLinks').onclick=()=>{
  for(let n=start;n<start+count;n++){
   const id=n+offset;
   if(!Number.isSafeInteger(id)||id<0)continue;
-  const generatedPath=m[3]==='/'?prefix+n+ext:prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
+  const generatedPath=word===''?prefix+n+ext:prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
   const u=new URL(sample.href);u.pathname=generatedPath;u.hash='';
   if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))urls.push(u.href);
  }
