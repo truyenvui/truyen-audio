@@ -740,13 +740,18 @@ $('discover').onclick=()=>{
   url.hash='';
   const originalPath=url.pathname;
   const decodedPath=decodeURIComponent(originalPath);
-  const tail=decodedPath.match(/\/(\d{1,7})\/?$/);
-  let startNo=1,basePath=decodedPath;
-  if(tail){
+  // Sstruyen-style URL: ...-chuong-1-4465208
+  const sstruyenMatch=decodedPath.match(/(-chuong-)(\\d+)(-)(\\d+)(\\/?$)/i);
+  const tail=decodedPath.match(/\\/(\\d{1,7})\\/?$/);
+  let startNo=1,basePath=decodedPath,linkMode='slash';
+  if(sstruyenMatch){
+   startNo=Number(sstruyenMatch[2]);
+   linkMode='sstruyen';
+  }else if(tail){
    startNo=Number(tail[1]);
-   basePath=decodedPath.replace(/\/(\d{1,7})\/?$/,'/');
+   basePath=decodedPath.replace(/\\/(\\d{1,7})\\/?$/,'/');
   }
-  if(!basePath.endsWith('/'))basePath+='/';
+  if(linkMode==='slash'&&!basePath.endsWith('/'))basePath+='/';
   const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value,10)||200));
   const saved=new Set();
   for(const b of lib||[])for(const c of (b.chapters||[]))if(c.sourceUrl){
@@ -759,7 +764,9 @@ $('discover').onclick=()=>{
   for(let i=0;i<count;i++){
    const u=new URL(url.href);
    if(i===0)u.pathname=originalPath;
-   else u.pathname=basePath+(startNo+i)+'/';
+   else if(linkMode==='sstruyen'){
+    u.pathname=decodedPath.replace(/(-chuong-)(\\d+)(-)(\\d+)(\\/?$)/i,(_,a,n,d,id,slash)=>a+(Number(n)+i)+d+(Number(id)+i)+slash);
+   }else u.pathname=basePath+(startNo+i)+'/';
    u.hash='';
    if(!saved.has(u.href)&&!generated.includes(u.href))generated.push(u.href);
   }
