@@ -40,7 +40,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
-<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="patternStartChapter">Chương bắt đầu tạo link</label><input id="patternStartChapter" type="number" inputmode="numeric" min="1" max="999999" value="1">
+<div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="patternStartChapter">Mã cuối URL / chương bắt đầu tạo link</label><input id="patternStartChapter" type="number" inputmode="numeric" min="1" max="999999" value="1">
 <label for="maxDiscoverPages">Số link muốn tự tạo (mặc định 5, tối đa 200)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="5" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="5" selected>5 chương (khuyên dùng)</option><option value="10">10 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
@@ -283,7 +283,7 @@ function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errC
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
  const uniqueUrls=[...new Set(rawUrls)];
- const tailInfo=url=>{try{const u=new URL(url),p=decodeURIComponent(u.pathname),m=p.match(/(\\d+)(?:\\.html?)?\\/?$/i);return m?{number:Number(m[1]),host:u.hostname.toLowerCase()}:null}catch(e){return null}};
+ const tailInfo=url=>{try{const u=new URL(url),p=decodeURIComponent(u.pathname),m=p.match(/(\d+)(?:\.html?)?\/?$/i);return m?{number:Number(m[1]),host:u.hostname.toLowerCase()}:null}catch(e){return null}};
  const tailSamples=uniqueUrls.map(url=>tailInfo(url));
  const sameTailSeries=tailSamples.length>1&&tailSamples.every(x=>x&&x.host===tailSamples[0].host);
  const urls=uniqueUrls.map((url,index)=>({url,index,tail:tailSamples[index]})).sort((a,b)=>{
