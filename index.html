@@ -265,7 +265,7 @@ $('fetch').onclick=async()=>{
  const baseImports=imports.slice();
  const results=new Array(pending.length);
  let saveChain=Promise.resolve();
- const concurrency=Math.min(5,pending.length);
+ const concurrency=1;
  async function worker(){
   while(true){
    if(saveError)return;
@@ -289,7 +289,7 @@ $('fetch').onclick=async()=>{
    saved++;
    $('importProgress').value=Math.min(total,doneBefore+completed);
    say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
-   if(completed%3===0||completed===pending.length)renderImports();
+   renderImports();
    say('waitCount',pending.length-completed);
    say('importStatus','Đang lấy '+completed+'/'+pending.length+' chương; app xử lý song song '+concurrency+' chương và tự lưu từng kết quả.');
   }
