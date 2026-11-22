@@ -91,24 +91,14 @@ try{history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]')
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
 function normalizedSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
-function canonicalChapterUrl(value){
- try{
-  const u=new URL(value);u.hash='';
-  for(const k of [...u.searchParams.keys()])if(/^(utm_.+|fbclid|gclid|ref|source)$/i.test(k))u.searchParams.delete(k);
-  u.hostname=u.hostname.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
-  u.pathname=decodeURI(u.pathname).replace(/\/{2,}/g,'/').replace(/\/$/,'')||'/';
-  u.searchParams.sort();
-  return u.href;
- }catch(e){return String(value||'').trim()}
-}
 function storySlugFromUrl(value){
  try{
   const u=new URL(value),parts=decodeURIComponent(u.pathname).replace(/\.html?$/i,'').split('/').filter(Boolean);
   const generic=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
-  while(parts.length&&(/^\d+$/.test(parts[parts.length-1])||generic.has(normalizedSlug(parts[parts.length-1]))))parts.pop();
+  const chapterTail=/^(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i;
+  while(parts.length&&(/^\d+$/.test(parts[parts.length-1])||chapterTail.test(parts[parts.length-1])||generic.has(normalizedSlug(parts[parts.length-1]))))parts.pop();
   if(!parts.length)return '';
-  let last=parts[parts.length-1];
-  last=last.replace(/(?:[-_/])(?:chuong|chapter|chap|episode|ep|tap|phan)[-_ ]?\d+(?:[-_]\d+)?$/i,'');
+  const last=parts[parts.length-1].replace(/(?:[-_/])(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i,'');
   if(!last||generic.has(normalizedSlug(last)))return '';
   return normalizedSlug(last);
  }catch(e){return ''}
@@ -134,40 +124,34 @@ function sameStoryUrl(a,b){
 function bookMatchesStory(b,url){
  const slug=storySlugFromUrl(url);
  if(!slug)return false;
- const title=normalizedSlug(b.title).replace(/-(?:chuong|chapter|chap|tap|phan)-?\d+(?:-\d+)?$/i,'');
- if(title===slug||title.includes(slug)||slug.includes(title)&&title.length>=8)return true;
- const stop=new Set(['truyen','doc','doc-truyen','chuong','chapter','tap','phan','full','convert','audio','novel','story','read']);
- const a=new Set(slug.split('-').filter(t=>t.length>1&&!stop.has(t)));
- const z=new Set(title.split('-').filter(t=>t.length>1&&!stop.has(t)));
- if(a.size>=2&&z.size>=2){
-  let shared=0;for(const t of a)if(z.has(t))shared++;
-  if(shared>=2&&shared/Math.min(a.size,z.size)>=0.75)return true;
- }
+ if(normalizedSlug(b.title)===slug)return true;
  return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url));
 }
-function libraryHasChapter(url,title=''){
- const canonical=canonicalChapterUrl(url);
- for(const b of lib)for(const c of b.chapters||[]){
-  if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonical)return true;
+function isAlreadySaved(url,title=''){
+ let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
+ for(const b of lib)for(const c of b.chapters||[])if(c.sourceUrl){
+  let old='';try{const u=new URL(c.sourceUrl);u.hash='';old=u.href}catch(e){old=String(c.sourceUrl)}
+  if(old===canonical)return true;
  }
  const no=chapterNumber(url)||chapterNumber(title);
  if(!no)return false;
- return lib.some(b=>{
-  if(!bookMatchesStory(b,url))return false;
-  return (b.chapters||[]).some(c=>{
+ for(const b of lib){
+  if(!bookMatchesStory(b,url))continue;
+  if((b.chapters||[]).some(c=>{
    const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
-   return oldNo===no;
-  });
- });
-}
-function isAlreadySaved(url,title=''){
- return libraryHasChapter(url,title);
+   if(oldNo!==no)return false;
+   return c.sourceUrl?sameStoryUrl(c.sourceUrl,url):normalizedSlug(b.title)===storySlugFromUrl(url);
+  }))return true;
+ }
+ return false;
 }
 function isAlreadyImported(url){
- const canonical=canonicalChapterUrl(url),no=chapterNumber(url);
+ let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
+ const no=chapterNumber(url);
  return imports.some(x=>{
   if(!x.ok)return false;
-  if(canonicalChapterUrl(x.url)===canonical)return true;
+  let old='';try{const u=new URL(x.url);u.hash='';old=u.href}catch(e){old=String(x.url||'')}
+  if(old===canonical)return true;
   const oldNo=chapterNumber(x.url)||chapterNumber(x.title);
   return !!no&&oldNo===no&&sameStoryUrl(x.url,url);
  });
@@ -276,52 +260,25 @@ $('fetch').onclick=async()=>{
  $('importProgress').max=total;$('importProgress').value=doneBefore;
  say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
  if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp thành công. Không còn chương mới trong lượt này.');return}
- $('fetch').disabled=true;$('saveImports').disabled=true;
- let saved=0,completed=0,nextIndex=0,saveError=null;
- const baseImports=imports.slice();
- const results=new Array(pending.length);
- let saveChain=Promise.resolve();
- const concurrency=1;
- async function worker(){
-  while(true){
-   if(saveError)return;
-   const i=nextIndex++;
-   if(i>=pending.length)return;
-   let item;
-   try{
-    item=await readUrl(pending[i]);
-    if($('autoTranslate').checked){
-     item.originalText=item.text;
-     try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}
-     catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}
-    }
-   }catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
-   results[i]=item;
-   completed++;
-   imports.splice(0,imports.length,...baseImports,...results.filter(Boolean));
-   saveChain=saveChain.then(()=>writeDraft()).catch(e=>{saveError=e});
-   await saveChain;
-   if(saveError)return;
-   saved++;
-   $('importProgress').value=Math.min(total,doneBefore+completed);
-   say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
-   renderImports();
-   say('waitCount',pending.length-completed);
-   say('importStatus','Đang lấy '+completed+'/'+pending.length+' chương; app xử lý song song '+concurrency+' chương và tự lưu từng kết quả.');
-  }
- }
+ $('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;
  try{
-  say('waitCount',pending.length);
-  say('importStatus','Bắt đầu lấy '+pending.length+' chương cùng lúc theo nhóm '+concurrency+' chương. Nội dung vẫn được lưu ngay khi từng chương hoàn tất.');
-  await Promise.all(Array.from({length:concurrency},()=>worker()));
+  for(let i=0;i<pending.length;i++){
+   say('waitCount',pending.length-i);
+   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' trong lượt tối đa '+batchLimit+' chương. Bản nháp được lưu sau từng chương.');
+   let item;
+   try{item=await readUrl(pending[i]);if($('autoTranslate').checked){item.originalText=item.text;try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}}}
+   catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
+   imports.push(item);
+   try{await writeDraft();saved++}
+   catch(e){say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');renderImports();break}
+   $('importProgress').value=Math.min(total,doneBefore+i+1);
+   say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
+   renderImports();if(i<pending.length-1)await sleep(450)
+  }
  }finally{
   $('fetch').disabled=false;say('waitCount',0);
-  if(saveError){
-   say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');
-  }else{
-   const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
-   say('importStatus','Đã xử lý thêm '+saved+' chương. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
-  }
+  const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+  say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
  }
 }
 if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
@@ -403,14 +360,10 @@ $('discover').onclick=async()=>{
    const routeUrl=new URL(url.href);
    routeUrl.search='';routeUrl.hash='';
    const path=decodeURIComponent(routeUrl.pathname);
-   // Chỉ tự tăng số cuối URL khi đường dẫn nói rõ đây là tuyến chương.
-   // Không đoán các ID số chung như /truyen/ten-truyen/123 vì có thể là ID bộ truyện.
-   const explicitRoute=path.match(/^(.*\/(?:read|reader|doc|doc-truyen|chapter|chapters|chuong|tap|phan))\/(\d{1,7})\/?$/i);
-   if(explicitRoute){
-    routeUrl.pathname=explicitRoute[1]+'/';
-    routeStart=Number(explicitRoute[2]);
-    routeBase=routeUrl.href.replace(/\/$/,'');
-   }
+   const numericTail=path.match(/\/(\d{1,7})\/?$/);
+   if(numericTail){routeUrl.pathname=path.replace(/\/(\d{1,7})\/?$/,'/');routeStart=Number(numericTail[1]);}
+   else if(inputChapterNo===Number.MAX_SAFE_INTEGER){routeStart=1;}
+   routeBase=routeUrl.href.replace(/\/$/,'');
   }catch(e){}
   if(routeBase){
    const first=new URL(url.href);first.hash='';
@@ -665,13 +618,7 @@ $('saveImports').onclick=async()=>{
   const index=imports.indexOf(x),ti=document.querySelector('[data-title="'+index+'"]'),tx=document.querySelector('[data-text="'+index+'"]');
   const chapterTitle=ti?.value.trim()||x.title,body=tx?.value??x.text;
   if(!body.trim())continue;
-  const duplicateInBatch=target.chapters.some(c=>{
-   if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonicalChapterUrl(x.url))return true;
-   const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
-   const newNo=chapterNumber(x.url)||chapterNumber(chapterTitle);
-   return !!newNo&&oldNo===newNo;
-  });
-  if(libraryHasChapter(x.url,chapterTitle)||duplicateInBatch){duplicates++;continue}
+  if(isAlreadySaved(x.url,chapterTitle)){duplicates++;continue}
   target.chapters.push({id:uid(),title:chapterTitle,text:body,originalText:x.originalText||null,translated:!!x.translated,pos:0,sourceUrl:x.url});added++;
  }
  if(!added){say('importStatus','Không có chương mới để lưu. App đã phát hiện và bỏ qua '+duplicates+' chương trùng; bản nháp vẫn được giữ.');return}
