@@ -383,7 +383,7 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
   }
  }
  if(!strategy||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
-  say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ dạng chuong-51-4089513, /chapter/51, ?chapter=51 hoặc /read/123.');return;
+  say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ số chương trong slug, mã số cuối URL, /chapter/51, ?chapter=51 hoặc /read/123.');return;
  }
   const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'5',10)||5));
   let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
@@ -400,6 +400,7 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
    u.pathname=generatedPath;
   }else if(strategy==='folder')u.pathname=prefix+n;
   else if(strategy==='reader-id')u.pathname=prefix+n+ext;
+  else if(strategy==='tail-id')u.pathname=prefix+sep1+n+ext;
   u.hash='';
   if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))urls.push(u.href);
  }
