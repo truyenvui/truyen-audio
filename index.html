@@ -373,12 +373,12 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
    else{
     // 4) Dạng ID chương: /read/123, /reader/123 hoặc /doc/123
     m=path.match(/^(.*\/(?:read|reader|doc)\/)(\d+)(\/?)$/i);
-     else{
-      // Mã số nằm ở cuối URL, ví dụ /ten-truyen/728 hoặc ten-truyen-728
-      m=path.match(/^(.*?)([\/_-])(\d{1,9})(\.html?)?$/i);
-      if(m){strategy='tail-id';prefix=m[1];sep1=m[2];chapterInSample=Number(m[3]);ext=m[4]||''}
-     }
     if(m){strategy='reader-id';prefix=m[1];chapterInSample=Number(m[2]);ext=m[3]||''}
+    else{
+     // 5) Mã số nằm ở cuối URL: /ten-truyen/728 hoặc ten-truyen-728
+     m=path.match(/^(.*?)([\/_-])(\d{1,9})(\.html?)?$/i);
+     if(m){strategy='tail-id';prefix=m[1];sep1=m[2];chapterInSample=Number(m[3]);ext=m[4]||''}
+    }
    }
   }
  }
