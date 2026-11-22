@@ -283,9 +283,9 @@ function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errC
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
  const uniqueUrls=[...new Set(rawUrls)];
- const tailInfo=url=>{try{const u=new URL(url),p=decodeURIComponent(u.pathname),m=p.match(/(?:^|[\\/_-])(\\d{1,9})(?:\\.html?)?\\/?$/i);if(!m)return null;return {number:Number(m[1]),base:u.hostname.toLowerCase()+p.slice(0,m.index)+p.slice(m.index+m[0].length).replace(/\\/$/,'')+u.search}}catch(e){return null}};
+ const tailInfo=url=>{try{const u=new URL(url),p=decodeURIComponent(u.pathname),m=p.match(/(\\d+)(?:\\.html?)?\\/?$/i);return m?{number:Number(m[1]),host:u.hostname.toLowerCase()}:null}catch(e){return null}};
  const tailSamples=uniqueUrls.map(url=>tailInfo(url));
- const sameTailSeries=tailSamples.length>1&&tailSamples.every(x=>x&&x.base===tailSamples[0].base);
+ const sameTailSeries=tailSamples.length>1&&tailSamples.every(x=>x&&x.host===tailSamples[0].host);
  const urls=uniqueUrls.map((url,index)=>({url,index,tail:tailSamples[index]})).sort((a,b)=>{
   if(sameTailSeries&&a.tail.number!==b.tail.number)return a.tail.number-b.tail.number;
   return a.index-b.index;
@@ -385,10 +385,10 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  if(!strategy||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
   say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ dạng chuong-51-4089513, /chapter/51, ?chapter=51 hoặc /read/123.');return;
  }
- const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'100',10)||100));
- let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
- const known=maxKnownChapter(sample.href);
- if(start<=known)start=known+1;
+  const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'5',10)||5));
+  let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
+  const known=strategy==='tail-id'?0:maxKnownChapter(sample.href);
+  if(strategy==='tail-id'&&start===1)start=chapterInSample;else if(start<=known)start=known+1;
  $('patternStartChapter').value=String(start);
  const urls=[];
  for(let n=start;n<start+count;n++){
