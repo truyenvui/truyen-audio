@@ -266,7 +266,14 @@ $('translateEndpoint').onchange=()=>{try{localStorage.setItem(TRANSLATE_ENDPOINT
 function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errCount',imports.filter(x=>!x.ok).length);say('waitCount',0);say('skipCount',skippedCount);say('resultCount',imports.length);$('exportCollected').disabled=!imports.some(x=>x.ok&&String(x.text||'').trim());$('importResults').innerHTML=imports.map((x,i)=>'<div class="result"><strong>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+esc(x.title)+'</strong><span class="muted">'+esc(x.ok?x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.translated?'Đã dịch tiếng Việt':(x.translationError?'Chưa dịch: '+x.translationError:'Bản gốc'))+' · '+(x.source||'Đã lấy'):x.error)+'</span>'+(x.ok?'<label>Tên chương</label><input type="text" data-title="'+i+'" value="'+esc(x.title)+'"><label>Nội dung xem trước</label><textarea data-text="'+i+'">'+esc(x.text)+'</textarea>':'')+(!x.ok&&/xác minh|security verification|captcha|cloudflare|verify you are human|HTTP 401|HTTP 403|chặn truy cập tự động/i.test(x.error||'')?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 13px;border:1px solid #6b5635;border-radius:12px;color:#f4c477;text-decoration:none;font-weight:650">↗ Mở trang gốc để xác minh trên Safari</a><div class="actions" style="margin-top:8px"><button type="button" data-retry="'+i+'">↻ Thử lại chương này</button></div><div class="small" style="margin-top:7px">Sau khi xác minh trên Safari, quay lại bấm thử lại. Phiên xác minh không được chuyển sang dịch vụ đọc trang bên ngoài nên có thể vẫn thất bại.</div>':'')+'</div>').join('');$('saveImports').disabled=!imports.some(x=>x.ok);document.querySelectorAll('[data-retry]').forEach(btn=>{btn.onclick=async()=>{const i=Number(btn.getAttribute('data-retry'));const item=imports[i];if(!item||!item.url)return;btn.disabled=true;btn.textContent='Đang thử lại…';say('importStatus','Đang thử lấy lại chương sau khi ông đã xác minh trên Safari…');try{imports[i]=await readUrl(item.url);if($('autoTranslate').checked){imports[i].originalText=imports[i].text;imports[i].text=await translateLongText(imports[i].originalText);imports[i].translated=true}await writeDraft();say('importStatus','Đã lấy lại và xử lý chương. Ông có thể lưu vào thư viện hoặc xuất TXT.')}catch(e){imports[i]={...item,ok:false,error:(e.message||'Không lấy lại được nội dung')+' Safari không chuyển phiên xác minh sang dịch vụ đọc trang bên ngoài.'};say('importStatus',imports[i].error)}renderImports()}})}
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
- const urls=[...new Set(rawUrls)].slice(0,200);
+ const urls=[...new Set(rawUrls)].sort((a,b)=>{
+  const na=chapterNumber(a),nb=chapterNumber(b);
+  if(na!==null&&nb!==null&&na!==nb)return na-nb;
+  const nums=u=>{try{const v=new URL(u);return (v.pathname+'?'+v.search).match(/\d+/g)||[]}catch(e){return String(u).match(/\d+/g)||[]}};
+  const aa=nums(a),bb=nums(b),n=Math.min(aa.length,bb.length);
+  for(let i=1;i<=n;i++){const x=Number(aa[aa.length-i]),y=Number(bb[bb.length-i]);if(x!==y)return x-y}
+  return a.localeCompare(b,undefined,{numeric:true});
+ }).slice(0,200);
  if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}
  const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
  skippedCount=urls.length-pendingAll.length;renderImports();
@@ -281,7 +288,7 @@ $('fetch').onclick=async()=>{
  const baseImports=imports.slice();
  const results=new Array(pending.length);
  let saveChain=Promise.resolve();
- const concurrency=3;
+ const concurrency=5;
  async function worker(){
   while(true){
    if(saveError)return;
