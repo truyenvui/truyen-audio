@@ -288,8 +288,8 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false,sstruyenBaseId=0;
  // Nhận diện riêng Sstruyen để tăng đúng cả số chương và mã cuối.
  if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){
-  let p='';try{p=decodeURIComponent(sample.pathname).replace(/\\/+$/,'')}catch(e){p=sample.pathname.replace(/\\/+$/,'')}
-  const sm=p.match(/^(.*-chuong-)(\\d+)-(\\d+)(\\.html?)?$/i);
+  let p='';try{p=decodeURIComponent(sample.pathname).replace(/\/+$/,'')}catch(e){p=sample.pathname.replace(/\/+$/,'')}
+  const sm=p.match(/^(.*-chuong-)(\d+)-(\d+)(\.html?)?$/i);
   if(sm){strategy='sstruyen';prefix=sm[1];chapterInSample=Number(sm[2]);sstruyenBaseId=Number(sm[3]);ext=sm[4]||''}
  }
  // 1) Dạng query: ?chapter=51, ?chuong=51, ?ep=51...
@@ -366,8 +366,8 @@ $('discover').onclick=async()=>{
   const inputChapterNo=chapterNo(url.href);
   // Sstruyen dùng mã chương ở cuối slug; không nối /2/ vào URL dạng -chuong-1-9596136.
   if(hostKey(url.hostname)==='sstruyen.pics'){
-   let p='';try{p=decodeURIComponent(url.pathname).replace(/\\/+$/,'')}catch(e){p=url.pathname.replace(/\\/+$/,'')}
-   const sm=p.match(/^(.*-chuong-)(\\d+)-(\\d+)(\\.html?)?$/i);
+   let p='';try{p=decodeURIComponent(url.pathname).replace(/\/+$/,'')}catch(e){p=url.pathname.replace(/\/+$/,'')}
+   const sm=p.match(/^(.*-chuong-)(\d+)-(\d+)(\.html?)?$/i);
    if(sm){
     const baseChapter=Number(sm[2]),baseId=Number(sm[3]),ext=sm[4]||'';
     const generated=[];
@@ -378,7 +378,7 @@ $('discover').onclick=async()=>{
      if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))generated.push(u.href);
     }
     skippedCount=maxFound-generated.length;
-    $('urls').value=generated.join('\\n');
+    $('urls').value=generated.join('\n');
     $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
     say('skipCount',skippedCount);
     say('progressLabel','Đã tạo '+generated.length+' link Sstruyen theo đúng số chương và mã cuối.');
