@@ -91,14 +91,24 @@ try{history=JSON.parse(localStorage.getItem('goc_nghe_truyen_history_v1')||'[]')
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8), book=()=>lib.find(b=>b.id===bid), chapter=()=>book()?.chapters.find(c=>c.id===cid);
 const say=(id,t)=>$(id).textContent=t;
 function normalizedSlug(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+function canonicalChapterUrl(value){
+ try{
+  const u=new URL(value);u.hash='';
+  for(const k of [...u.searchParams.keys()])if(/^(utm_.+|fbclid|gclid|ref|source)$/i.test(k))u.searchParams.delete(k);
+  u.hostname=u.hostname.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
+  u.pathname=decodeURI(u.pathname).replace(/\/{2,}/g,'/').replace(/\/$/,'')||'/';
+  u.searchParams.sort();
+  return u.href;
+ }catch(e){return String(value||'').trim()}
+}
 function storySlugFromUrl(value){
  try{
   const u=new URL(value),parts=decodeURIComponent(u.pathname).replace(/\.html?$/i,'').split('/').filter(Boolean);
   const generic=new Set(['truyen','doc-truyen','doc','read','reader','chapter','chapters','chuong','tap','phan','novel','book','story','detail','index','page','trang','m','mobile','amp']);
-  const chapterTail=/^(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i;
-  while(parts.length&&(/^\d+$/.test(parts[parts.length-1])||chapterTail.test(parts[parts.length-1])||generic.has(normalizedSlug(parts[parts.length-1]))))parts.pop();
+  while(parts.length&&(/^\d+$/.test(parts[parts.length-1])||generic.has(normalizedSlug(parts[parts.length-1]))))parts.pop();
   if(!parts.length)return '';
-  const last=parts[parts.length-1].replace(/(?:[-_/])(?:chuong|chapter|chap|episode|ep|tap|phan)[-_]?\d+(?:[-_]\d+)?$/i,'');
+  let last=parts[parts.length-1];
+  last=last.replace(/(?:[-_/])(?:chuong|chapter|chap|episode|ep|tap|phan)[-_ ]?\d+(?:[-_]\d+)?$/i,'');
   if(!last||generic.has(normalizedSlug(last)))return '';
   return normalizedSlug(last);
  }catch(e){return ''}
@@ -124,15 +134,13 @@ function sameStoryUrl(a,b){
 function bookMatchesStory(b,url){
  const slug=storySlugFromUrl(url);
  if(!slug)return false;
- if(normalizedSlug(b.title)===slug)return true;
+ const title=normalizedSlug(b.title).replace(/-(?:chuong|chapter|chap|tap|phan)-?\d+(?:-\d+)?$/i,'');
+ if(title===slug||title.includes(slug)||slug.includes(title)&&title.length>=8)return true;
  return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url));
 }
 function isAlreadySaved(url,title=''){
- let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
- for(const b of lib)for(const c of b.chapters||[])if(c.sourceUrl){
-  let old='';try{const u=new URL(c.sourceUrl);u.hash='';old=u.href}catch(e){old=String(c.sourceUrl)}
-  if(old===canonical)return true;
- }
+ const canonical=canonicalChapterUrl(url);
+ for(const b of lib)for(const c of b.chapters||[])if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonical)return true;
  const no=chapterNumber(url)||chapterNumber(title);
  if(!no)return false;
  for(const b of lib){
@@ -140,18 +148,16 @@ function isAlreadySaved(url,title=''){
   if((b.chapters||[]).some(c=>{
    const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
    if(oldNo!==no)return false;
-   return c.sourceUrl?sameStoryUrl(c.sourceUrl,url):normalizedSlug(b.title)===storySlugFromUrl(url);
+   return c.sourceUrl?sameStoryUrl(c.sourceUrl,url):true;
   }))return true;
  }
  return false;
 }
 function isAlreadyImported(url){
- let canonical='';try{const u=new URL(url);u.hash='';canonical=u.href}catch(e){canonical=String(url||'')}
- const no=chapterNumber(url);
+ const canonical=canonicalChapterUrl(url),no=chapterNumber(url);
  return imports.some(x=>{
   if(!x.ok)return false;
-  let old='';try{const u=new URL(x.url);u.hash='';old=u.href}catch(e){old=String(x.url||'')}
-  if(old===canonical)return true;
+  if(canonicalChapterUrl(x.url)===canonical)return true;
   const oldNo=chapterNumber(x.url)||chapterNumber(x.title);
   return !!no&&oldNo===no&&sameStoryUrl(x.url,url);
  });
@@ -645,7 +651,13 @@ $('saveImports').onclick=async()=>{
   const index=imports.indexOf(x),ti=document.querySelector('[data-title="'+index+'"]'),tx=document.querySelector('[data-text="'+index+'"]');
   const chapterTitle=ti?.value.trim()||x.title,body=tx?.value??x.text;
   if(!body.trim())continue;
-  if(isAlreadySaved(x.url,chapterTitle)){duplicates++;continue}
+  const duplicateInBatch=target.chapters.some(c=>{
+   if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonicalChapterUrl(x.url))return true;
+   const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
+   const newNo=chapterNumber(x.url)||chapterNumber(chapterTitle);
+   return !!newNo&&oldNo===newNo&&((c.sourceUrl&&sameStoryUrl(c.sourceUrl,x.url))||(!c.sourceUrl&&bookMatchesStory(target,x.url)));
+  });
+  if(isAlreadySaved(x.url,chapterTitle)||duplicateInBatch){duplicates++;continue}
   target.chapters.push({id:uid(),title:chapterTitle,text:body,originalText:x.originalText||null,translated:!!x.translated,pos:0,sourceUrl:x.url});added++;
  }
  if(!added){say('importStatus','Không có chương mới để lưu. App đã phát hiện và bỏ qua '+duplicates+' chương trùng; bản nháp vẫn được giữ.');return}
