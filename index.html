@@ -136,22 +136,32 @@ function bookMatchesStory(b,url){
  if(!slug)return false;
  const title=normalizedSlug(b.title).replace(/-(?:chuong|chapter|chap|tap|phan)-?\d+(?:-\d+)?$/i,'');
  if(title===slug||title.includes(slug)||slug.includes(title)&&title.length>=8)return true;
+ const stop=new Set(['truyen','doc','doc-truyen','chuong','chapter','tap','phan','full','convert','audio','novel','story','read']);
+ const a=new Set(slug.split('-').filter(t=>t.length>1&&!stop.has(t)));
+ const z=new Set(title.split('-').filter(t=>t.length>1&&!stop.has(t)));
+ if(a.size>=2&&z.size>=2){
+  let shared=0;for(const t of a)if(z.has(t))shared++;
+  if(shared>=2&&shared/Math.min(a.size,z.size)>=0.75)return true;
+ }
  return (b.chapters||[]).some(c=>c.sourceUrl&&sameStoryUrl(c.sourceUrl,url));
 }
-function isAlreadySaved(url,title=''){
+function libraryHasChapter(url,title=''){
  const canonical=canonicalChapterUrl(url);
- for(const b of lib)for(const c of b.chapters||[])if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonical)return true;
+ for(const b of lib)for(const c of b.chapters||[]){
+  if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonical)return true;
+ }
  const no=chapterNumber(url)||chapterNumber(title);
  if(!no)return false;
- for(const b of lib){
-  if(!bookMatchesStory(b,url))continue;
-  if((b.chapters||[]).some(c=>{
+ return lib.some(b=>{
+  if(!bookMatchesStory(b,url))return false;
+  return (b.chapters||[]).some(c=>{
    const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
-   if(oldNo!==no)return false;
-   return c.sourceUrl?sameStoryUrl(c.sourceUrl,url):true;
-  }))return true;
- }
- return false;
+   return oldNo===no;
+  });
+ });
+}
+function isAlreadySaved(url,title=''){
+ return libraryHasChapter(url,title);
 }
 function isAlreadyImported(url){
  const canonical=canonicalChapterUrl(url),no=chapterNumber(url);
@@ -655,9 +665,9 @@ $('saveImports').onclick=async()=>{
    if(c.sourceUrl&&canonicalChapterUrl(c.sourceUrl)===canonicalChapterUrl(x.url))return true;
    const oldNo=chapterNumber(c.sourceUrl)||chapterNumber(c.title);
    const newNo=chapterNumber(x.url)||chapterNumber(chapterTitle);
-   return !!newNo&&oldNo===newNo&&((c.sourceUrl&&sameStoryUrl(c.sourceUrl,x.url))||(!c.sourceUrl&&bookMatchesStory(target,x.url)));
+   return !!newNo&&oldNo===newNo;
   });
-  if(isAlreadySaved(x.url,chapterTitle)||duplicateInBatch){duplicates++;continue}
+  if(libraryHasChapter(x.url,chapterTitle)||duplicateInBatch){duplicates++;continue}
   target.chapters.push({id:uid(),title:chapterTitle,text:body,originalText:x.originalText||null,translated:!!x.translated,pos:0,sourceUrl:x.url});added++;
  }
  if(!added){say('importStatus','Không có chương mới để lưu. App đã phát hiện và bỏ qua '+duplicates+' chương trùng; bản nháp vẫn được giữ.');return}
