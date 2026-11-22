@@ -41,7 +41,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div><label for="patternStartChapter">Chương bắt đầu tạo link</label><input id="patternStartChapter" type="number" inputmode="numeric" min="1" max="999999" value="1">
-<label for="maxDiscoverPages">Số link muốn tự tạo (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="50">50 chương</option><option value="100" selected>100 chương (khuyên dùng)</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<label for="maxDiscoverPages">Số link muốn tự tạo (mặc định 5, tối đa 200)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="5" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="5" selected>5 chương (khuyên dùng)</option><option value="10">10 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="200">200 chương (nặng hơn trên iPhone)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -282,11 +282,12 @@ $('translateEndpoint').onchange=()=>{try{localStorage.setItem(TRANSLATE_ENDPOINT
 function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errCount',imports.filter(x=>!x.ok).length);say('waitCount',0);say('skipCount',skippedCount);say('resultCount',imports.length);$('exportCollected').disabled=!imports.some(x=>x.ok&&String(x.text||'').trim());$('importResults').innerHTML=imports.map((x,i)=>'<div class="result"><strong>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+esc(x.title)+'</strong><span class="muted">'+esc(x.ok?x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.translated?'Đã dịch tiếng Việt':(x.translationError?'Chưa dịch: '+x.translationError:'Bản gốc'))+' · '+(x.source||'Đã lấy'):x.error)+'</span>'+(x.ok?'<label>Tên chương</label><input type="text" data-title="'+i+'" value="'+esc(x.title)+'"><label>Nội dung xem trước</label><textarea data-text="'+i+'">'+esc(x.text)+'</textarea>':'')+(!x.ok&&/xác minh|security verification|captcha|cloudflare|verify you are human|HTTP 401|HTTP 403|chặn truy cập tự động/i.test(x.error||'')?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 13px;border:1px solid #6b5635;border-radius:12px;color:#f4c477;text-decoration:none;font-weight:650">↗ Mở trang gốc để xác minh trên Safari</a><div class="actions" style="margin-top:8px"><button type="button" data-retry="'+i+'">↻ Thử lại chương này</button></div><div class="small" style="margin-top:7px">Sau khi xác minh trên Safari, quay lại bấm thử lại. Phiên xác minh không được chuyển sang dịch vụ đọc trang bên ngoài nên có thể vẫn thất bại.</div>':'')+'</div>').join('');$('saveImports').disabled=!imports.some(x=>x.ok);document.querySelectorAll('[data-retry]').forEach(btn=>{btn.onclick=async()=>{const i=Number(btn.getAttribute('data-retry'));const item=imports[i];if(!item||!item.url)return;btn.disabled=true;btn.textContent='Đang thử lại…';say('importStatus','Đang thử lấy lại chương sau khi ông đã xác minh trên Safari…');try{imports[i]=await readUrl(item.url);if($('autoTranslate').checked){imports[i].originalText=imports[i].text;imports[i].text=await translateLongText(imports[i].originalText);imports[i].translated=true}await writeDraft();say('importStatus','Đã lấy lại và xử lý chương. Ông có thể lưu vào thư viện hoặc xuất TXT.')}catch(e){imports[i]={...item,ok:false,error:(e.message||'Không lấy lại được nội dung')+' Safari không chuyển phiên xác minh sang dịch vụ đọc trang bên ngoài.'};say('importStatus',imports[i].error)}renderImports()}})}
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
- const urls=[...new Set(rawUrls)].map((url,index)=>({url,index})).sort((a,b)=>{
-  const na=chapterNumber(a.url),nb=chapterNumber(b.url);
-  // Chỉ sắp xếp theo số chương khi cả hai link đều nhận diện được số chương.
-  // Link không nhận diện được giữ nguyên thứ tự người dùng đã dán, tránh bị xếp theo mã ID cuối URL.
-  if(na!==null&&nb!==null&&na!==nb)return na-nb;
+ const uniqueUrls=[...new Set(rawUrls)];
+ const tailInfo=url=>{try{const u=new URL(url),p=decodeURIComponent(u.pathname),m=p.match(/(?:^|[\\/_-])(\\d{1,9})(?:\\.html?)?\\/?$/i);if(!m)return null;return {number:Number(m[1]),base:u.hostname.toLowerCase()+p.slice(0,m.index)+p.slice(m.index+m[0].length).replace(/\\/$/,'')+u.search}}catch(e){return null}};
+ const tailSamples=uniqueUrls.map(url=>tailInfo(url));
+ const sameTailSeries=tailSamples.length>1&&tailSamples.every(x=>x&&x.base===tailSamples[0].base);
+ const urls=uniqueUrls.map((url,index)=>({url,index,tail:tailSamples[index]})).sort((a,b)=>{
+  if(sameTailSeries&&a.tail.number!==b.tail.number)return a.tail.number-b.tail.number;
   return a.index-b.index;
  }).map(x=>x.url).slice(0,200);
  if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}
@@ -372,6 +373,11 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
    else{
     // 4) Dạng ID chương: /read/123, /reader/123 hoặc /doc/123
     m=path.match(/^(.*\/(?:read|reader|doc)\/)(\d+)(\/?)$/i);
+     else{
+      // Mã số nằm ở cuối URL, ví dụ /ten-truyen/728 hoặc ten-truyen-728
+      m=path.match(/^(.*?)([\/_-])(\d{1,9})(\.html?)?$/i);
+      if(m){strategy='tail-id';prefix=m[1];sep1=m[2];chapterInSample=Number(m[3]);ext=m[4]||''}
+     }
     if(m){strategy='reader-id';prefix=m[1];chapterInSample=Number(m[2]);ext=m[3]||''}
    }
   }
