@@ -281,7 +281,7 @@ $('fetch').onclick=async()=>{
  const baseImports=imports.slice();
  const results=new Array(pending.length);
  let saveChain=Promise.resolve();
- const concurrency=1;
+ const concurrency=3;
  async function worker(){
   while(true){
    if(saveError)return;
