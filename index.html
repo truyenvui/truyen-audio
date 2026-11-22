@@ -473,7 +473,7 @@ $('discover').onclick=async()=>{
     const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path))));
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
-    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter));
+    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)));
     if(u.href!==url.href&&looksChapter&&sameStory){
       found.add(u.href);
       // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
