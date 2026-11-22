@@ -285,9 +285,15 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
- let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false;
+ let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false,sstruyenBaseId=0;
+ // Nhận diện riêng Sstruyen để tăng đúng cả số chương và mã cuối.
+ if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){
+  let p='';try{p=decodeURIComponent(sample.pathname).replace(/\\/+$/,'')}catch(e){p=sample.pathname.replace(/\\/+$/,'')}
+  const sm=p.match(/^(.*-chuong-)(\\d+)-(\\d+)(\\.html?)?$/i);
+  if(sm){strategy='sstruyen';prefix=sm[1];chapterInSample=Number(sm[2]);sstruyenBaseId=Number(sm[3]);ext=sm[4]||''}
+ }
  // 1) Dạng query: ?chapter=51, ?chuong=51, ?ep=51...
- for(const [key,value] of sample.searchParams){
+ if(!strategy)for(const [key,value] of sample.searchParams){
   if(/^(?:chapter|chap|chuong|episode|ep|tap|chapter_no|chapter_num)$/i.test(key)&&/^\d{1,7}$/.test(value)){
    strategy='query';paramName=key;chapterInSample=Number(value);break;
   }
@@ -322,7 +328,11 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  const urls=[];
  for(let n=start;n<start+count;n++){
   const u=new URL(original);
-  if(strategy==='query')u.searchParams.set(paramName,String(n));
+  if(strategy==='sstruyen'){
+   const id=sstruyenBaseId+(n-chapterInSample);
+   if(!Number.isSafeInteger(id)||id<0)continue;
+   u.pathname=prefix+n+'-'+id+ext;
+  }else if(strategy==='query')u.searchParams.set(paramName,String(n));
   else if(strategy==='slug'){
    const id=n+offset;if(!Number.isSafeInteger(id)||id<0)continue;
    const generatedPath=prefix+word+sep1+n+(hasId?sep2+id:'')+ext;
@@ -354,6 +364,28 @@ $('discover').onclick=async()=>{
   // Hỗ trợ website dùng dạng /ten-truyen/ , /ten-truyen/2/ , /ten-truyen/3/.
   // Nếu URL đã có số cuối đường dẫn thì tiếp tục từ số đó; nếu chưa có thì coi URL gốc là chương 1.
   const inputChapterNo=chapterNo(url.href);
+  // Sstruyen dùng mã chương ở cuối slug; không nối /2/ vào URL dạng -chuong-1-9596136.
+  if(hostKey(url.hostname)==='sstruyen.pics'){
+   let p='';try{p=decodeURIComponent(url.pathname).replace(/\\/+$/,'')}catch(e){p=url.pathname.replace(/\\/+$/,'')}
+   const sm=p.match(/^(.*-chuong-)(\\d+)-(\\d+)(\\.html?)?$/i);
+   if(sm){
+    const baseChapter=Number(sm[2]),baseId=Number(sm[3]),ext=sm[4]||'';
+    const generated=[];
+    for(let n=baseChapter;n<baseChapter+maxFound;n++){
+     const id=baseId+(n-baseChapter);
+     if(!Number.isSafeInteger(id)||id<0)continue;
+     const u=new URL(url.href);u.pathname=sm[1]+n+'-'+id+ext;u.hash='';
+     if(!isAlreadySaved(u.href)&&!isAlreadyImported(u.href))generated.push(u.href);
+    }
+    skippedCount=maxFound-generated.length;
+    $('urls').value=generated.join('\\n');
+    $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
+    say('skipCount',skippedCount);
+    say('progressLabel','Đã tạo '+generated.length+' link Sstruyen theo đúng số chương và mã cuối.');
+    say('importStatus',generated.length?'Đã tạo link Sstruyen theo quy luật đã nhận diện. Kiểm tra danh sách trước khi lấy nội dung.':'Không có link mới: các chương đã có trong thư viện hoặc bản nháp.');
+    return;
+   }
+  }
   let routeStart=inputChapterNo===Number.MAX_SAFE_INTEGER?1:inputChapterNo;
   let routeBase='';
   try{
