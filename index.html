@@ -260,25 +260,52 @@ $('fetch').onclick=async()=>{
  $('importProgress').max=total;$('importProgress').value=doneBefore;
  say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
  if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp thành công. Không còn chương mới trong lượt này.');return}
- $('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;
- try{
-  for(let i=0;i<pending.length;i++){
-   say('waitCount',pending.length-i);
-   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' trong lượt tối đa '+batchLimit+' chương. Bản nháp được lưu sau từng chương.');
+ $('fetch').disabled=true;$('saveImports').disabled=true;
+ let saved=0,completed=0,nextIndex=0,saveError=null;
+ const baseImports=imports.slice();
+ const results=new Array(pending.length);
+ let saveChain=Promise.resolve();
+ const concurrency=Math.min(3,pending.length);
+ async function worker(){
+  while(true){
+   if(saveError)return;
+   const i=nextIndex++;
+   if(i>=pending.length)return;
    let item;
-   try{item=await readUrl(pending[i]);if($('autoTranslate').checked){item.originalText=item.text;try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}}}
-   catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
-   imports.push(item);
-   try{await writeDraft();saved++}
-   catch(e){say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');renderImports();break}
-   $('importProgress').value=Math.min(total,doneBefore+i+1);
+   try{
+    item=await readUrl(pending[i]);
+    if($('autoTranslate').checked){
+     item.originalText=item.text;
+     try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}
+     catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}
+    }
+   }catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
+   results[i]=item;
+   completed++;
+   imports.splice(0,imports.length,...baseImports,...results.filter(Boolean));
+   saveChain=saveChain.then(()=>writeDraft()).catch(e=>{saveError=e});
+   await saveChain;
+   if(saveError)return;
+   saved++;
+   $('importProgress').value=Math.min(total,doneBefore+completed);
    say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
-   renderImports();if(i<pending.length-1)await sleep(450)
+   renderImports();
+   say('waitCount',pending.length-completed);
+   say('importStatus','Đang lấy '+completed+'/'+pending.length+' chương; app xử lý song song '+concurrency+' chương và tự lưu từng kết quả.');
   }
+ }
+ try{
+  say('waitCount',pending.length);
+  say('importStatus','Bắt đầu lấy '+pending.length+' chương cùng lúc theo nhóm '+concurrency+' chương. Nội dung vẫn được lưu ngay khi từng chương hoàn tất.');
+  await Promise.all(Array.from({length:concurrency},()=>worker()));
  }finally{
   $('fetch').disabled=false;say('waitCount',0);
-  const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
-  say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
+  if(saveError){
+   say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');
+  }else{
+   const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+   say('importStatus','Đã xử lý thêm '+saved+' chương. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
+  }
  }
 }
 if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
