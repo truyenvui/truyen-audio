@@ -438,7 +438,7 @@ $('discover').onclick=async()=>{
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
     const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter));
-    if(u.href!==url.href&&looksChapter&&sameStory){
+    if(u.href!==url.href&&looksChapter&&sameStory&&!isAlreadySaved(u.href)&&!isAlreadyImported(u.href)){
       found.add(u.href);
       // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
       // Không tự đoán ID: chỉ tiếp tục khi website thực sự công bố URL chương kế.
@@ -493,7 +493,7 @@ $('discover').onclick=async()=>{
       const hasChapterWord=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(p);
       const numericId=/\/\d{4,8}(?:\.html?)?\/?$/i.test(p);
       const belongs= (!!wanted&&norm(p).includes(wanted)) || (!!wanted&&identity===wanted) || (!!wanted&&p.toLowerCase().includes(wanted.replace(/-/g,'_')));
-      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href){if(!found.has(u.href))foundSequence.push(u.href);found.add(u.href)}
+      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href&&!isAlreadySaved(u.href)&&!isAlreadyImported(u.href)){if(!found.has(u.href))foundSequence.push(u.href);found.add(u.href)}
      }catch(e){}
     }
    }catch(e){}
