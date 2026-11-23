@@ -35,12 +35,12 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <div class="manual-links" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px">
  <h3 style="margin:0 0 8px">🌐 Đọc trang kiểu OpenRead</h3>
- <p class="small">Tìm trang truyện trên web hoặc dán link chương. Mở trang web ở Safari, sao chép link chương rồi quay lại đây và nhấn <b>Đọc trang</b>. Góc sẽ trích xuất phần nội dung chính, lọc các thành phần phụ, rồi gom thành một chương trong danh sách tạm.</p>
+ <p class="small">Tìm trang truyện trên web hoặc dán link chương. PWA không đọc trực tiếp được tab Safari, nên ông mở trang ở Safari, sao chép link chương rồi quay lại đây và nhấn <b>Đọc trang</b>. Góc sẽ dùng bộ trích xuất để lọc phần nội dung chính rồi gom thành một chương trong danh sách tạm.</p>
  <label for="quickSearchText">Tìm truyện trên web</label>
  <div class="actions"><input id="quickSearchText" type="search" placeholder="Tên truyện cần tìm..." style="flex:1;min-width:0"><button type="button" id="quickSearch">Tìm trên web</button></div>
  <label for="quickReadUrl">Link trang/chương cần đọc</label>
  <input id="quickReadUrl" type="url" inputmode="url" placeholder="Dán link chương truyện tại đây...">
- <div class="actions"><button type="button" id="quickOpen">Mở trang web</button><button type="button" class="primary" id="quickRead">Đọc trang</button></div>
+ <div class="actions"><button type="button" id="quickOpen">Mở ở Safari</button><button type="button" class="primary" id="quickRead">Đọc trang</button></div>
  <div class="status" id="quickReadStatus" role="status" aria-live="polite">Mỗi lần nhấn Đọc trang sẽ tạo một chương riêng trong bản nháp. Đọc tiếp chương sau và lặp lại; đủ khoảng 100 chương thì bấm Lưu vào thư viện.</div>
  <div id="quickReadPreview" class="small" style="max-height:180px;overflow:auto;white-space:pre-wrap;margin-top:8px"></div>
 </div>
@@ -52,7 +52,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div>
-<label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="5" selected>5 chương (khuyên dùng)</option><option value="10">10 chương</option><option value="20">20 chương</option><option value="50">50 chương</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="5" selected>5 chương (khuyên dùng)</option><option value="10">10 chương</option><option value="20">20 chương</option><option value="50">50 chương</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
