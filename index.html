@@ -434,10 +434,13 @@ $('discover').onclick=async()=>{
     const pathChapter=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(path);
     const readNumberRoute=/\/(?:read|doc|reader|doc-truyen)\/\d{1,8}\/?$/i.test(path);
     const numericTail=/\/\d{1,8}(?:\.html?)?\/?$/i.test(path);
-    const looksChapter=queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path))));
+    const sstruyenPath=/^\/doc-truyen\/([^/]+)-chuong-(\d+)-(\d+)\/?$/i.exec(path);
+    const sstruyenLabel=/^chương\s*(\d+)\s*:/i.exec(label);
+    const isSstruyen=hostKey(url.hostname)==='sstruyen.pics';
+    const looksChapter=isSstruyen?!!(sstruyenPath&&sstruyenLabel&&norm(sstruyenPath[1])===wanted&&Number(sstruyenPath[2])===Number(sstruyenLabel[1])):(queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path)))));
     const linkIdentity=storySlugFromUrl(u.href);
     const pathHasStory=!!wanted&&norm(path).includes(wanted);
-    const sameStory=pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter));
+    const sameStory=hostKey(url.hostname)==='sstruyen.pics'?!!(sstruyenPath&&sstruyenLabel&&norm(sstruyenPath[1])===wanted&&Number(sstruyenPath[2])===Number(sstruyenLabel[1])):(pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter)));
     if(u.href!==url.href&&looksChapter&&sameStory&&!isAlreadySaved(u.href)&&!isAlreadyImported(u.href)){
       found.add(u.href);
       // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
@@ -458,6 +461,7 @@ $('discover').onclick=async()=>{
   }
   // Public sitemap discovery: robots.txt may advertise one or more sitemap files.
   // Stay on the original host, cap requests, and never infer links beyond published URLs.
+  if(hostKey(url.hostname)!=='sstruyen.pics'){
   const sitemapQueue=new Set([
    new URL('/robots.txt',url.origin).href,
    new URL('/sitemap.xml',url.origin).href,
@@ -498,6 +502,7 @@ $('discover').onclick=async()=>{
     }
    }catch(e){}
   }
+  } // Không dò sitemap chung cho Sstruyen; tránh lẫn truyện liên quan.
   // Chỉ sử dụng URL chương và URL phân trang được tìm thấy trực tiếp trên website.
   const sequenceIndex=new Map(foundSequence.map((u,i)=>[u,i]));
   const allResults=[...found].sort((a,b)=>{
@@ -513,7 +518,7 @@ $('discover').onclick=async()=>{
   if(!result.length){
    const explanation=allResults.length
     ?'Tìm thấy '+allResults.length+' link, trong đó '+skippedCount+' link được xác nhận trùng với chương đã lưu hoặc bản nháp thành công.'
-    :'Chưa tìm thấy link chương phù hợp. Website có thể dùng mục lục tải bằng JavaScript hoặc cấu trúc link riêng.';
+     :(hostKey(url.hostname)==='sstruyen.pics'?'Dịch vụ đọc trang không trả về URL thật của từng chương. App đã dừng, không tự tạo link hoặc lấy chương đoán.':'Chưa tìm thấy link chương phù hợp. Website có thể dùng mục lục tải bằng JavaScript hoặc cấu trúc link riêng.');
    say('importStatus',explanation+' Thư viện không bị thay đổi.');
    renderImports();return;
   }
