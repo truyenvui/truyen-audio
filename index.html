@@ -44,6 +44,14 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
  <div class="status" id="quickReadStatus" role="status" aria-live="polite">Mỗi lần nhấn Đọc trang sẽ tạo một chương riêng trong bản nháp. Đọc tiếp chương sau và lặp lại; đủ khoảng 100 chương thì bấm Lưu vào thư viện.</div>
  <div id="quickReadPreview" class="small" style="max-height:180px;overflow:auto;white-space:pre-wrap;margin-top:8px"></div>
 </div>
+<div class="manual-links" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px">
+ <h3 style="margin:0 0 8px">🔢 Tạo link theo quy luật mã tăng 1</h3>
+ <p class="small">Chỉ dùng khi ông đã biết chắc website tăng số chương và mã cuối URL đúng 1 cho mỗi chương. Không dùng với Sstruyen hoặc website có mã ID bất thường.</p>
+ <label for="patternUrl">Link một chương mẫu</label>
+ <input id="patternUrl" type="url" inputmode="url" placeholder="Dán link chương mẫu có mã cuối tăng đều...">
+ <div class="actions"><div style="flex:1;min-width:0"><label for="patternCount">Số chương muốn tạo link</label><input id="patternCount" type="number" min="1" max="200" value="100"></div><div style="flex:1;min-width:0"><label for="patternStartChapter">Bắt đầu từ chương</label><input id="patternStartChapter" type="number" min="1" placeholder="Tự lấy chương kế tiếp"></div></div>
+ <button type="button" id="makePatternLinks">Tạo danh sách link chương</button>
+</div>
 <label for="storyUrl">Link trang giới thiệu truyện</label>
 <input id="storyUrl" type="url" inputmode="url" placeholder="Dán link trang giới thiệu truyện có danh sách chương...">
 <div class="actions"><button class="primary" id="discover" type="button">Tìm link chương từ danh sách</button></div>
@@ -328,7 +336,7 @@ $('fetch').onclick=async()=>{
 }
 if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let sample;
- try{sample=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
+ try{sample=new URL(normalizeStoryUrl(($('patternUrl')?.value||$('storyUrl').value).trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
  if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){say('importStatus','Sstruyen dùng mã ID không được phép tự đoán. Hãy dùng chế độ Đọc trang kiểu OpenRead hoặc nhập các link chương thật.');return}
  let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false,sstruyenBaseId=0;
@@ -366,8 +374,9 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  if(!strategy||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
   say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ dạng chuong-51-4089513, /chapter/51, ?chapter=51 hoặc /read/123.');return;
  }
- const count=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages').value||'100',10)||100));
- let start=Math.max(1,Number.parseInt($('patternStartChapter').value||'1',10)||1);
+ const count=Math.max(1,Math.min(200,Number.parseInt($('patternCount')?.value||$('maxDiscoverPages').value||'100',10)||100));
+ if(hasId&&!confirm('Chỉ tiếp tục nếu ông đã kiểm tra chắc chắn mã số cuối URL tăng đúng 1 ở từng chương. Ông xác nhận quy luật này chứ?'))return;
+ let start=Math.max(1,Number.parseInt($('patternStartChapter').value||String(chapterInSample+1),10)||chapterInSample+1);
  const known=maxKnownChapter(sample.href);
  if(start<=known)start=known+1;
  $('patternStartChapter').value=String(start);
