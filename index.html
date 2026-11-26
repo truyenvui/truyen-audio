@@ -303,7 +303,7 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let sample;
  try{sample=new URL(normalizeStoryUrl(($('patternUrl')?.value||'').trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
- if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){say('importStatus','Sstruyen dùng mã ID không được phép tự đoán. Hãy dùng chế độ Đọc trang kiểu OpenRead hoặc nhập các link chương thật.');return}
+ if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){say('importStatus','Sstruyen dùng mã ID không được phép tự đoán. Hãy dán các link chương thật vào khung nhập link bên dưới.');return}
  let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false,sstruyenBaseId=0;
  // Nhận diện riêng Sstruyen để tăng đúng cả số chương và mã cuối.
  if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){
