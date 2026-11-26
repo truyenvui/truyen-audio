@@ -73,7 +73,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </section>
 
 <div class="desktopgrid">
-<section class="section" id="librarySection"><div class="sectionhead"><h2>📚 Thư viện</h2><button id="addBook">＋ Bộ truyện</button></div><div class="small" id="libraryCount" style="margin:-5px 0 12px">Thư viện đang tải…</div>
+<section class="section" id="librarySection"><div class="sectionhead"><h2>📚 Thư viện</h2><button id="addBook">＋ Bộ truyện</button></div><div class="actions" style="margin:10px 0"><button id="clearLibraryOnly" class="danger">Xóa sạch thư viện cũ</button></div><p class="small">Chỉ xóa các bộ truyện và chương đã lưu. Bản nháp thu thập, danh sách link lỗi, lịch sử và cài đặt vẫn được giữ.</p><div class="small" id="libraryCount" style="margin:-5px 0 12px">Thư viện đang tải…</div>
 <div class="selectrow"><div><label for="books">Bộ truyện đang chọn</label><select id="books"></select></div><button id="renameBook">Đổi tên</button></div>
 <div class="actions"><button id="addChapter">＋ Chương mới</button><button id="renameChapter">Đổi tên chương</button><button class="danger" id="deleteChapter">Xóa chương</button></div>
 <label for="chapters">Danh sách chương</label><select id="chapters"></select>
@@ -533,6 +533,18 @@ function exportLibraryTxt(){
  downloadTxt(b.title,b.title+'\n'+'='.repeat(Math.min(60,Math.max(8,String(b.title||'').length)))+'\n\n'+body);
  say('libraryStatus','Đã tạo file TXT gồm '+chapters.length+' chương. Thư viện vẫn được giữ nguyên; chọn Lưu vào Tệp trên iPhone để lưu file.');
 }
+$('clearLibraryOnly').onclick=async()=>{
+ if(!confirm('XÓA TOÀN BỘ truyện và chương trong thư viện trên thiết bị này? Thao tác không thể hoàn tác.'))return;
+ if(!confirm('Xác nhận lần cuối: xóa sạch tất cả bộ truyện và chương đã lưu? Bản nháp thu thập và cài đặt sẽ được giữ.'))return;
+ try{
+  if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null}
+  try{await libraryWriteQueue}catch(e){}
+  lib=[];bid='';cid='';
+  if(libraryDb){await writeLibraryDB(libraryDb,[])}
+  try{localStorage.removeItem(KEY)}catch(e){}
+  render();say('libraryStatus','Đã xóa sạch thư viện cũ. Bản nháp thu thập, link lỗi, lịch sử và cài đặt vẫn được giữ.');
+ }catch(e){say('libraryStatus','Không xóa hết được thư viện: '+(e.message||'lỗi bộ nhớ Safari')+'. Hãy tải lại trang rồi thử lại.')}
+};
 $('resetAllData').onclick=async()=>{
  if(!confirm('XÓA TOÀN BỘ dữ liệu Góc Thu Thập Truyện trên thiết bị này? Thư viện, chương, bản nháp, lịch sử và cài đặt sẽ bị xóa. Không thể hoàn tác.'))return;
  if(!confirm('Xác nhận lần cuối: ông đã sao lưu những truyện cần giữ và đồng ý xóa sạch?'))return;
