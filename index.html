@@ -34,36 +34,23 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <section class="section" id="importSection">
 <div class="sectionhead"><h2><span class="sectionicon">↗</span> Trung tâm thu thập truyện</h2></div>
 <div class="manual-links" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px">
- <h3 style="margin:0 0 8px">🌐 Đọc trang kiểu OpenRead</h3>
- <p class="small">Tìm trang truyện trên web hoặc dán link chương. PWA không đọc trực tiếp được tab Safari, nên ông mở trang ở Safari, sao chép link chương rồi quay lại đây và nhấn <b>Đọc trang</b>. Góc sẽ dùng bộ trích xuất để lọc phần nội dung chính rồi gom thành một chương trong danh sách tạm.</p>
- <label for="quickSearchText">Tìm truyện trên web</label>
- <div class="actions"><input id="quickSearchText" type="search" placeholder="Tên truyện cần tìm..." style="flex:1;min-width:0"><button type="button" id="quickSearch">Tìm trên web</button></div>
- <label for="quickReadUrl">Link trang/chương cần đọc</label>
- <input id="quickReadUrl" type="url" inputmode="url" placeholder="Dán link chương truyện tại đây...">
- <div class="actions"><button type="button" id="quickOpen">Mở ở Safari</button><button type="button" class="primary" id="quickRead">Đọc trang</button></div>
- <div class="status" id="quickReadStatus" role="status" aria-live="polite">Mỗi lần nhấn Đọc trang sẽ tạo một chương riêng trong bản nháp. Đọc tiếp chương sau và lặp lại; đủ khoảng 100 chương thì bấm Lưu vào thư viện.</div>
- <div id="quickReadPreview" class="small" style="max-height:180px;overflow:auto;white-space:pre-wrap;margin-top:8px"></div>
-</div>
-<div class="manual-links" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px">
  <h3 style="margin:0 0 8px">🔢 Tạo link theo quy luật mã tăng 1</h3>
- <p class="small">Chỉ dùng khi ông đã biết chắc website tăng số chương và mã cuối URL đúng 1 cho mỗi chương. Không dùng với Sstruyen hoặc website có mã ID bất thường.</p>
+ <p class="small">Chỉ dùng khi ông đã xác nhận quy luật URL của website. Không tự tăng mã ID bất thường như SSTruyen; với những trang đó, hãy dán link chương thật ở khung bên dưới.</p>
  <label for="patternUrl">Link một chương mẫu</label>
  <input id="patternUrl" type="url" inputmode="url" placeholder="Dán link chương mẫu có mã cuối tăng đều...">
  <div class="actions"><div style="flex:1;min-width:0"><label for="patternCount">Số chương muốn tạo link</label><input id="patternCount" type="number" min="1" max="200" value="100"></div><div style="flex:1;min-width:0"><label for="patternStartChapter">Bắt đầu từ chương</label><input id="patternStartChapter" type="number" min="1" placeholder="Tự lấy chương kế tiếp"></div></div>
  <button type="button" id="makePatternLinks">Tạo danh sách link chương</button>
 </div>
-<label for="storyUrl">Link trang giới thiệu truyện</label>
-<input id="storyUrl" type="url" inputmode="url" placeholder="Dán link trang giới thiệu truyện có danh sách chương...">
-<div class="actions"><button class="primary" id="discover" type="button">Tìm link chương từ danh sách</button></div>
-<p class="small">Dán link trang giới thiệu truyện. App tìm liên kết chương thật trong danh sách; không tự đoán mã URL. Với bộ truyện có mã URL bất thường, dùng khung Đọc trang kiểu OpenRead ở trên để lấy từng chương. Link đã lưu thành công sẽ được tự bỏ qua.</p>
-<details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
-<textarea id="urls" placeholder="Mỗi dòng một link chương. Có thể dán 900 link; mỗi lượt xử lý tối đa 200..." style="min-height:88px;margin-top:10px"></textarea>
-</details>
+<div class="manual-links" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:14px">
+ <h3 style="margin:0 0 8px">🔗 Lấy truyện bằng cách dán link</h3>
+ <p class="small">Dán một hoặc nhiều link chương thật, mỗi link một dòng. Có thể dán danh sách 900 link; app xử lý tối đa 200 chương mỗi lượt, tự bỏ qua link đã lưu và lưu bản nháp sau từng chương.</p>
+ <label for="urls">Danh sách link chương</label>
+ <textarea id="urls" placeholder="Dán link chương 1&#10;Dán link chương 2&#10;Dán link chương 3..." style="min-height:150px"></textarea>
+</div>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div>
-<label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt (tối đa 200)</label><select id="batchSize"><option value="25">25 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="150">150 chương</option><option value="200" selected>200 chương (một lượt)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<label for="batchSize">Số chương xử lý trong một lượt (tối đa 200)</label><select id="batchSize"><option value="25">25 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="150">150 chương</option><option value="200" selected>200 chương (một lượt)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
-<div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
 <div class="savehint">Chỉ lưu khi ông bấm nút bên dưới.</div>
 <div class="actions"><button id="saveImports" disabled>Lưu vào thư viện</button><button id="exportCollected" disabled>Xuất TXT</button></div>
 </section>
@@ -192,10 +179,10 @@ async function initLibraryStorage(){try{libraryDb=await openLibraryDB();const sa
 window.addEventListener('pagehide',()=>{if(libraryWriteTimer){clearTimeout(libraryWriteTimer);libraryWriteTimer=null;saveLibraryNow()}});
 const DRAFT_DB='goc_nghe_truyen_import_draft_v1';
 function openDraftDB(){return new Promise((resolve,reject)=>{if(!('indexedDB'in window)){reject(Error('Trình duyệt không hỗ trợ lưu bản nháp.'));return}const req=indexedDB.open(DRAFT_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-async function writeDraft(){const db=await openDraftDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put({storyUrl:$('storyUrl').value,urls:$('urls').value,imports},'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
+async function writeDraft(){const db=await openDraftDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put({urls:$('urls').value,imports},'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
 async function readDraft(){const db=await openDraftDB();try{return await new Promise((resolve,reject)=>{const req=db.transaction('drafts','readonly').objectStore('drafts').get('current');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)})}finally{db.close()}}
 async function clearDraft(){try{const db=await openDraftDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').delete('current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}finally{db.close()}}catch(e){}}
-async function restoreDraft(){try{const draft=await readDraft();if(!draft||!Array.isArray(draft.imports)||!draft.imports.length)return;imports=draft.imports;$('storyUrl').value=draft.storyUrl||'';$('urls').value=draft.urls||'';renderImports();say('importStatus','Đã khôi phục '+imports.filter(x=>x.ok).length+' chương từ bản nháp. Ông có thể lưu ngay hoặc bấm Lấy nội dung chương để tiếp tục.')}catch(e){say('importStatus','Chưa thể đọc bản nháp cũ; thư viện đã lưu vẫn được giữ nguyên.')}}
+async function restoreDraft(){try{const draft=await readDraft();if(!draft||!Array.isArray(draft.imports)||!draft.imports.length)return;imports=draft.imports;$('urls').value=draft.urls||'';renderImports();say('importStatus','Đã khôi phục '+imports.filter(x=>x.ok).length+' chương từ bản nháp. Ông có thể lưu ngay hoặc bấm Lấy nội dung chương để tiếp tục.')}catch(e){say('importStatus','Chưa thể đọc bản nháp cũ; thư viện đã lưu vẫn được giữ nguyên.')}}
 function cleanSpeech(t){return t.replace(/[“”„‟「」『』]/g,'').replace(/(^|\s)"|"(?=\s|$)/g,'$1')}
 function makeChunks(t){t=cleanSpeech(t);const parts=t.match(/[^.!?。！？\n]+[.!?。！？]?|\n+/g)||[],out=[];for(let s of parts){s=s.trim();while(s.length>150){let k=-1;for(let i=Math.min(145,s.length-1);i>=65;i--)if('，,；;：:'.includes(s[i])){k=i+1;break}if(k<0){k=s.lastIndexOf(' ',145);if(k<65)k=145}out.push(s.slice(0,k).trim());s=s.slice(k).trim()}if(s)out.push(s)}return out}
 function fmt(n){n=Math.max(0,Math.floor(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),sec=n%60;return h?String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'):String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
@@ -268,39 +255,6 @@ $('translateEndpoint').value=localStorage.getItem(TRANSLATE_ENDPOINT_KEY)||'http
 $('translateEndpoint').onchange=()=>{try{localStorage.setItem(TRANSLATE_ENDPOINT_KEY,$('translateEndpoint').value.trim())}catch(e){}};
 function renderImports(){say('okCount',imports.filter(x=>x.ok).length);say('errCount',imports.filter(x=>!x.ok).length);say('waitCount',0);say('skipCount',skippedCount);say('resultCount',imports.length);$('exportCollected').disabled=!imports.some(x=>x.ok&&String(x.text||'').trim());$('importResults').innerHTML=imports.map((x,i)=>'<div class="result"><strong>'+(x.ok?'✓':'✕')+' '+(i+1)+'. '+esc(x.title)+'</strong><span class="muted">'+esc(x.ok?x.text.length.toLocaleString('vi-VN')+' ký tự · '+(x.translated?'Đã dịch tiếng Việt':(x.translationError?'Chưa dịch: '+x.translationError:'Bản gốc'))+' · '+(x.source||'Đã lấy'):x.error)+'</span>'+(x.ok?'<label>Tên chương</label><input type="text" data-title="'+i+'" value="'+esc(x.title)+'"><label>Nội dung xem trước</label><textarea data-text="'+i+'">'+esc(x.text)+'</textarea>':'')+(!x.ok&&/xác minh|security verification|captcha|cloudflare|verify you are human|HTTP 401|HTTP 403|chặn truy cập tự động/i.test(x.error||'')?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;padding:10px 13px;border:1px solid #6b5635;border-radius:12px;color:#f4c477;text-decoration:none;font-weight:650">↗ Mở trang gốc để xác minh trên Safari</a><div class="actions" style="margin-top:8px"><button type="button" data-retry="'+i+'">↻ Thử lại chương này</button></div><div class="small" style="margin-top:7px">Sau khi xác minh trên Safari, quay lại bấm thử lại. Phiên xác minh không được chuyển sang dịch vụ đọc trang bên ngoài nên có thể vẫn thất bại.</div>':'')+'</div>').join('');$('saveImports').disabled=!imports.some(x=>x.ok);document.querySelectorAll('[data-retry]').forEach(btn=>{btn.onclick=async()=>{const i=Number(btn.getAttribute('data-retry'));const item=imports[i];if(!item||!item.url)return;btn.disabled=true;btn.textContent='Đang thử lại…';say('importStatus','Đang thử lấy lại chương sau khi ông đã xác minh trên Safari…');try{imports[i]=await readUrl(item.url);if($('autoTranslate').checked){imports[i].originalText=imports[i].text;imports[i].text=await translateLongText(imports[i].originalText);imports[i].translated=true}await writeDraft();say('importStatus','Đã lấy lại và xử lý chương. Ông có thể lưu vào thư viện hoặc xuất TXT.')}catch(e){imports[i]={...item,ok:false,error:(e.message||'Không lấy lại được nội dung')+' Safari không chuyển phiên xác minh sang dịch vụ đọc trang bên ngoài.'};say('importStatus',imports[i].error)}renderImports()}})}
 
-$('quickSearch').onclick=()=>{
- const q=$('quickSearchText').value.trim();
- if(!q){say('quickReadStatus','Nhập tên truyện cần tìm trước nhé.');return}
- window.open('https://duckduckgo.com/?q='+encodeURIComponent(q),'_blank','noopener');
-};
-$('quickOpen').onclick=()=>{
- try{const u=normalizeStoryUrl($('quickReadUrl').value.trim());window.open(u,'_blank','noopener');say('quickReadStatus','Đã mở trang web ở tab mới. Sao chép link chương trên trang đó, quay lại app và nhấn Đọc trang.')}
- catch(e){say('quickReadStatus',e.message||'Link chưa hợp lệ.')}
-};
-$('quickRead').onclick=async()=>{
- const btn=$('quickRead');let url;
- try{url=normalizeStoryUrl($('quickReadUrl').value.trim())}
- catch(e){say('quickReadStatus',e.message||'Dán link chương trước nhé.');return}
- if(isAlreadySaved(url)||isAlreadyImported(url)){say('quickReadStatus','Chương này đã có trong thư viện hoặc danh sách tạm nên app không lấy trùng.');return}
- btn.disabled=true;say('quickReadStatus','Đang đọc trang và lọc nội dung chính…');$('quickReadPreview').textContent='';
- try{
-  let item=await readUrl(url);
-  const no=chapterNumber(url);
-  if(no&&/^https?:/i.test(item.title||''))item.title='Chương '+no;
-  if($('autoTranslate').checked){
-   item.originalText=item.text;
-   try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}
-   catch(e){item.translated=false;item.translationError=e.message||'Dịch thất bại';item.text=item.originalText}
-  }
-  imports.push(item);
-  $('storyUrl').value=$('storyUrl').value.trim()||url;
-  await writeDraft();
-  $('quickReadPreview').textContent=item.text.slice(0,1800)+(item.text.length>1800?'…':'');
-  say('quickReadStatus','Đã lấy thành công "'+item.title+'" · '+item.text.length.toLocaleString('vi-VN')+' ký tự. Chương đã được lưu vào bản nháp tự động. Có thể dán link chương tiếp theo và lặp lại.');
-  renderImports();
- }catch(e){say('quickReadStatus','Không đọc được trang: '+(e.message||'Lỗi không xác định')+'. App không tạo chương giả và không lưu nội dung lỗi.')}
- finally{btn.disabled=false}
-};
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
  const urls=[],seen=new Set();let invalid=0;
@@ -347,7 +301,7 @@ $('fetch').onclick=async()=>{
 }
 if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  let sample;
- try{sample=new URL(normalizeStoryUrl(($('patternUrl')?.value||$('storyUrl').value).trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
+ try{sample=new URL(normalizeStoryUrl(($('patternUrl')?.value||'').trim()))}catch(e){say('importStatus','Ông dán link của một chương thật trước nhé.');return}
  const original=sample.href;
  if(sample.hostname.toLowerCase().endsWith('sstruyen.pics')){say('importStatus','Sstruyen dùng mã ID không được phép tự đoán. Hãy dùng chế độ Đọc trang kiểu OpenRead hoặc nhập các link chương thật.');return}
  let strategy=null,chapterInSample=null,prefix='',word='',sep1='',sep2='',ext='',offset=0,paramName='',hasId=false,sstruyenBaseId=0;
@@ -385,7 +339,7 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  if(!strategy||!Number.isSafeInteger(chapterInSample)||chapterInSample<1||!Number.isSafeInteger(offset)){
   say('importStatus','Chưa nhận ra mẫu URL. App hỗ trợ dạng chuong-51-4089513, /chapter/51, ?chapter=51 hoặc /read/123.');return;
  }
- const count=Math.max(1,Math.min(200,Number.parseInt($('patternCount')?.value||$('maxDiscoverPages').value||'100',10)||100));
+ const count=Math.max(1,Math.min(200,Number.parseInt($('patternCount')?.value||'100',10)||100));
  if(hasId&&!confirm('Chỉ tiếp tục nếu ông đã kiểm tra chắc chắn mã số cuối URL tăng đúng 1 ở từng chương. Ông xác nhận quy luật này chứ?'))return;
  let start=Math.max(1,Number.parseInt($('patternStartChapter').value||String(chapterInSample+1),10)||chapterInSample+1);
  const known=maxKnownChapter(sample.href);
@@ -412,198 +366,12 @@ if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
  $('importProgress').max=Math.max(1,urls.length);$('importProgress').value=0;
  say('progressLabel','Đã tạo '+urls.length+' link chương mới từ chương '+start+' đến '+(start+count-1));
  say('importStatus',urls.length?'Đã tạo link theo cấu trúc URL nhận diện được; tự bỏ qua chương đã có trong thư viện/bản nháp. Kiểm tra danh sách rồi bấm “Lấy nội dung chương”.':'Không có link mới: các chương trong khoảng này có thể đã nằm trong thư viện hoặc bản nháp.');
- $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
 };
-$('discover').onclick=async()=>{
- let url;
- try{url=new URL(normalizeStoryUrl($('storyUrl').value.trim()))}catch(e){say('importStatus',e.message||'Dán link trang truyện hợp lệ trước nhé.');return}
- $('discover').disabled=true;
- $('discoverHelp').classList.add('hidden');$('discoverHelp').innerHTML='';
- say('importStatus','Đã nhận link. Đang đọc danh sách chương và các trang phân trang…');
- try{
-  const norm=v=>decodeURIComponent(String(v||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const wanted=storySlugFromUrl(url.href);
-  const chapterNo=u=>chapterNumber(u)??(()=>{try{const p=decodeURIComponent(new URL(u).pathname),m=p.match(/\/(?:read|doc|reader)\/(\d{1,7})\/?$/i)||p.match(/\/(\d{1,7})\/?$/);return m?Number(m[1]):Number.MAX_SAFE_INTEGER}catch{return Number.MAX_SAFE_INTEGER}})();
-  const hostKey=h=>h.toLowerCase().replace(/^(?:www|m|mobile|amp)\./,'');
-  const pages=[url.href],seenPages=new Set(),found=new Set(),chapterOrder=new Map(),foundSequence=[];
-  const maxPages=220,maxFound=Math.max(1,Math.min(200,Number.parseInt($('maxDiscoverPages')?.value||'200',10)||200));
-  // Hỗ trợ website dùng dạng /ten-truyen/ , /ten-truyen/2/ , /ten-truyen/3/.
-  // Nếu URL đã có số cuối đường dẫn thì tiếp tục từ số đó; nếu chưa có thì coi URL gốc là chương 1.
-  const inputChapterNo=chapterNo(url.href);
-  // Với Sstruyen, luôn đọc danh sách chương và phân trang thật; tuyệt đối không tự tăng mã URL.
-  let routeStart=inputChapterNo===Number.MAX_SAFE_INTEGER?1:inputChapterNo;
-  let routeBase='';
-  try{
-   const routeUrl=new URL(url.href);
-   routeUrl.search='';routeUrl.hash='';
-   const path=decodeURIComponent(routeUrl.pathname);
-   const numericTail=path.match(/\/(\d{1,7})\/?$/);
-   if(numericTail){routeUrl.pathname=path.replace(/\/(\d{1,7})\/?$/,'/');routeStart=Number(numericTail[1]);}
-   else if(inputChapterNo===Number.MAX_SAFE_INTEGER){routeStart=1;}
-   routeBase=routeUrl.href.replace(/\/$/,'');
-  }catch(e){}
-  if(routeBase&&hostKey(url.hostname)!=='sstruyen.pics'){
-   const first=new URL(url.href);first.hash='';
-   found.add(first.href);chapterOrder.set(first.href,routeStart);foundSequence.push(first.href);
-   for(let n=routeStart+1;n<routeStart+maxFound&&found.size<maxFound;n++){
-    const generated=routeBase+'/'+n+'/';
-    found.add(generated);chapterOrder.set(generated,n);foundSequence.push(generated);
-   }
-  }else if(inputChapterNo!==Number.MAX_SAFE_INTEGER){found.add(url.href);chapterOrder.set(url.href,inputChapterNo);foundSequence.push(url.href)}
-  // Với URL dạng /ten-truyen/ hoặc /ten-truyen/2/, tạo link ngay tại chỗ.
-  // Không gọi dịch vụ phân tích hay sitemap khi quy luật số cuối URL đã rõ.
-  if(routeBase&&hostKey(url.hostname)!=='sstruyen.pics'){
-   const generated=[...found].filter(href=>!isAlreadySaved(href)&&!isAlreadyImported(href)).slice(0,200);
-   skippedCount=found.size-generated.length;
-   $('urls').value=generated.join('\n');
-   $('importProgress').max=Math.max(1,generated.length);$('importProgress').value=0;
-   say('skipCount',skippedCount);
-   say('progressLabel','Đã tạo '+generated.length+' link theo quy luật URL /tên-truyện/số-chương/.');
-   say('importStatus',generated.length?'Đã nhận dạng URL chương và tạo '+generated.length+' link mới. Đã bỏ qua '+skippedCount+' link trùng. Bấm “Lấy nội dung chương” để tiếp tục.':'Không có link mới: các chương theo quy luật này đã có trong thư viện hoặc bản nháp.');
-   return;
-  }
-  let declaredChapterTotal=0;
-  while(pages.length&&seenPages.size<maxPages&&found.size<maxFound){
-   const pageUrl=pages.shift();
-   if(seenPages.has(pageUrl))continue;
-   seenPages.add(pageUrl);
-   say('importStatus','Đang phân tích trang '+seenPages.size+'/'+maxPages+'… Đã thấy '+found.size+' link chương');
-   const response=await readerRequest(pageUrl,30000);
-   const raw=await response.text();
-   const totalMatch=raw.match(/(?:số\s+chương|tổng\s+số\s+chương|total\s+chapters|number\s+of\s+chapters)\s*[:：]?\s*(\d{1,6})/i)||raw.match(/(\d{1,6})\s+chương\b/i);
-   if(totalMatch){const total=Number(totalMatch[1]);if(total>0&&total<100000)declaredChapterTotal=Math.max(declaredChapterTotal,total)}
-   if(!response.ok)throw Error(explainFetchError(response.status,raw));
-   if(/performing security verification|security verification|verify you are human|checking your browser|captcha|cloudflare ray id|access denied/i.test(raw))throw Error('Website yêu cầu xác minh bảo mật. App không tự vượt bước xác minh này.');
-   const extracted=[];
-   for(const m of raw.matchAll(/\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^)\s]+|\.{0,2}\/[^)\s]+)\)/g))extracted.push({label:m[1].replace(/[*_]/g,'').trim(),href:m[2].replace(/&amp;/g,'&')});
-   for(const m of raw.matchAll(/<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)){
-    const label=m[2].replace(/<[^>]+>/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
-    extracted.push({label,href:m[1].replace(/&amp;/g,'&')});
-   }
-   // Also read rel=next/prev links and URLs exposed by public JSON-LD metadata.
-   for(const m of raw.matchAll(/<(?:link|a)\b(?=[^>]*\brel\s*=\s*["'][^"']*\b(?:next|prev|previous)\b)[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi))extracted.push({label:'next',href:m[1].replace(/&amp;/g,'&')});
-   for(const m of raw.matchAll(/["'](?:url|@id)["']\s*:\s*["'](https?:\/\/[^"']+)["']/gi))extracted.push({label:'',href:m[1].replace(/\\\//g,'/')});
-   for(const m of raw.matchAll(/https?:\/\/[^\s)\]<>"]+/g))extracted.push({label:'',href:m[0].replace(/[.,;]+$/,'')});
-   const hrefs=new Map();
-   for(const item of extracted){
-    try{
-     const u=new URL(item.href,pageUrl);u.hash='';
-     if(!/^https?:$/.test(u.protocol)||hostKey(u.hostname)!==hostKey(url.hostname))continue;
-     if(!hrefs.has(u.href)||(!hrefs.get(u.href).label&&item.label))hrefs.set(u.href,{url:u,label:item.label});
-    }catch(e){}
-   }
-   const pageIdentity=storySlugFromUrl(pageUrl);
-   for(const item of hrefs.values()){
-    const u=item.url,path=decodeURIComponent(u.pathname),label=item.label||'';
-    const queryChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\d+$/i.test(v));
-    const labelChapter=/\b(?:chương|chuong|chapter|chap|tập|episode|ep)\s*[\divxlc]+/i.test(label);
-    const pathChapter=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(path);
-    const readNumberRoute=/\/(?:read|doc|reader|doc-truyen)\/\d{1,8}\/?$/i.test(path);
-    const numericTail=/\/\d{1,8}(?:\.html?)?\/?$/i.test(path);
-    const sstruyenPath=/^\/doc-truyen\/([^/]+)-chuong-(\d+)-(\d+)\/?$/i.exec(path);
-    const sstruyenLabel=/^chương\s*(\d+)\s*:/i.exec(label);
-    const isSstruyen=hostKey(url.hostname)==='sstruyen.pics';
-    const looksChapter=isSstruyen?!!(sstruyenPath&&sstruyenLabel&&norm(sstruyenPath[1])===wanted&&Number(sstruyenPath[2])===Number(sstruyenLabel[1])):(queryChapter||pathChapter||readNumberRoute||(numericTail&&(labelChapter||(!!wanted&&norm(path).includes(wanted)&&/\/\d{4,8}(?:\.html?)?\/?$/i.test(path)))));
-    const linkIdentity=storySlugFromUrl(u.href);
-    const pathHasStory=!!wanted&&norm(path).includes(wanted);
-    const sameStory=hostKey(url.hostname)==='sstruyen.pics'?!!(sstruyenPath&&sstruyenLabel&&norm(sstruyenPath[1])===wanted&&Number(sstruyenPath[2])===Number(sstruyenLabel[1])):(pathHasStory||(!!wanted&&pageIdentity===wanted&&looksChapter&&(!linkIdentity||linkIdentity===wanted||/^(?:read|doc|reader|chapter|chuong)-?\d*$/i.test(linkIdentity)))||(!!wanted&&pageIdentity===wanted&&labelChapter&&(readNumberRoute||numericTail||pathChapter||queryChapter)));
-    if(u.href!==url.href&&looksChapter&&sameStory&&!isAlreadySaved(u.href)&&!isAlreadyImported(u.href)){
-      found.add(u.href);
-      // Nếu trang hiện tại chỉ là một chương, lần theo liên kết chương kế tiếp công khai.
-      // Không tự đoán ID: chỉ tiếp tục khi website thực sự công bố URL chương kế.
-      const isNextLink=/^(?:next|sau|tiếp|tiếp theo|chương sau|chương tiếp theo|đọc chương tiếp|chapter next|next chapter|»|›|→)$/i.test(label);
-      if(isNextLink&&!seenPages.has(u.href)&&!pages.includes(u.href)&&seenPages.size+pages.length<220)pages.push(u.href);
-     }
-    const q=[...u.searchParams.entries()];
-    const queryPage=q.some(([k,v])=>/^(?:page|paged|p|trang|page_num|pageNumber)$/i.test(k)&&/^\d+$/.test(v));
-    const pathPage=/\/(?:page|trang)\/\d+\/?$/i.test(path);
-    const numericLabel=/^(?:trang\s*)?\d{1,3}$/i.test(label);
-    const nextLabel=/^(?:sau|tiếp|tiếp theo|next|»|›|→|older|xem thêm)$/i.test(label);
-    const listingPath=u.pathname===url.pathname|| (!!wanted&&norm(path).includes(wanted)) || (!!wanted&&storySlugFromUrl(u.href)===wanted);
-    if(u.href!==pageUrl&&listingPath&&(queryPage||pathPage||((numericLabel||nextLabel)&&!looksChapter))&&!seenPages.has(u.href)&&!pages.includes(u.href))pages.push(u.href);
-   }
-   if(found.size>=maxFound)break;
-   await sleep(200);
-  }
-  // Public sitemap discovery: robots.txt may advertise one or more sitemap files.
-  // Stay on the original host, cap requests, and never infer links beyond published URLs.
-  if(hostKey(url.hostname)!=='sstruyen.pics'){
-  const sitemapQueue=new Set([
-   new URL('/robots.txt',url.origin).href,
-   new URL('/sitemap.xml',url.origin).href,
-   new URL('/sitemap_index.xml',url.origin).href,
-   new URL('/sitemap-index.xml',url.origin).href
-  ]);
-  const sitemapSeen=new Set(),sitemapFiles=[];
-  while(sitemapQueue.size&&sitemapSeen.size<8){
-   const sitemapUrl=sitemapQueue.values().next().value;sitemapQueue.delete(sitemapUrl);
-   if(sitemapSeen.has(sitemapUrl))continue;sitemapSeen.add(sitemapUrl);
-   try{
-    const res=await readerRequest(sitemapUrl,18000);if(!res.ok)continue;
-    const body=await res.text();
-    if(/performing security verification|verify you are human|captcha|cloudflare ray id|access denied/i.test(body))continue;
-    if(/robots\.txt(?:\?|$)/i.test(sitemapUrl)){
-     for(const m of body.matchAll(/^\s*sitemap\s*:\s*(https?:\/\/[^\s<]+)/gim)){
-      try{const u=new URL(m[1]);if(hostKey(u.hostname)===hostKey(url.hostname))sitemapQueue.add(u.href)}catch(e){}
-     }
-     continue;
-    }
-    const locs=[...body.matchAll(/<loc[^>]*>\s*([^<]+?)\s*<\/loc>/gi)].map(m=>m[1].replace(/&amp;/g,'&').trim());
-    if(/<sitemapindex/i.test(body)){
-     for(const loc of locs){try{const u=new URL(loc);if(hostKey(u.hostname)===hostKey(url.hostname)&&sitemapQueue.size<12)sitemapQueue.add(u.href)}catch(e){}}
-     continue;
-    }
-    sitemapFiles.push(sitemapUrl);
-    for(const loc of locs){
-     try{
-      const u=new URL(loc);u.hash='';
-      if(hostKey(u.hostname)!==hostKey(url.hostname))continue;
-      const p=decodeURIComponent(u.pathname),identity=storySlugFromUrl(u.href);
-      const qChapter=[...u.searchParams.entries()].some(([k,v])=>/^(?:chapter|chap|chuong|episode|ep|tap|chapter_id|chapter_no|chapter_num)$/i.test(k)&&/^\d+$/.test(v));
-      const hasChapterWord=/(?:^|[\/_-])(?:chuong|chapter|chap|episode|ep|tap|phan)(?:[\/_-]?\d+|\b)/i.test(p);
-      const numericId=/\/\d{4,8}(?:\.html?)?\/?$/i.test(p);
-      const belongs= (!!wanted&&norm(p).includes(wanted)) || (!!wanted&&identity===wanted) || (!!wanted&&p.toLowerCase().includes(wanted.replace(/-/g,'_')));
-      if((qChapter||hasChapterWord||(numericId&&belongs))&&belongs&&u.href!==url.href&&!isAlreadySaved(u.href)&&!isAlreadyImported(u.href)){if(!found.has(u.href))foundSequence.push(u.href);found.add(u.href)}
-     }catch(e){}
-    }
-   }catch(e){}
-  }
-  } // Không dò sitemap chung cho Sstruyen; tránh lẫn truyện liên quan.
-  // Chỉ sử dụng URL chương và URL phân trang được tìm thấy trực tiếp trên website.
-  const sequenceIndex=new Map(foundSequence.map((u,i)=>[u,i]));
-  const allResults=[...found].sort((a,b)=>{
-   const na=chapterOrder.get(a)??chapterNo(a),nb=chapterOrder.get(b)??chapterNo(b);
-   if(Number.isFinite(na)&&Number.isFinite(nb)&&na!==nb)return na-nb;
-   return (sequenceIndex.get(a)??0)-(sequenceIndex.get(b)??0);
-  });
-  const freshResults=allResults.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
-  skippedCount=allResults.length-freshResults.length;
-  const result=freshResults.slice(0,200);
-  $('urls').value=result.join('\n');
-  say('skipCount',skippedCount);
-  if(!result.length){
-   const explanation=allResults.length
-    ?'Tìm thấy '+allResults.length+' link, trong đó '+skippedCount+' link được xác nhận trùng với chương đã lưu hoặc bản nháp thành công.'
-     :(hostKey(url.hostname)==='sstruyen.pics'?'Dịch vụ đọc trang không trả về URL thật của từng chương. App đã dừng, không tự tạo link hoặc lấy chương đoán.':'Chưa tìm thấy link chương phù hợp. Website có thể dùng mục lục tải bằng JavaScript hoặc cấu trúc link riêng.');
-   say('importStatus',explanation+' Thư viện không bị thay đổi.');
-   renderImports();return;
-  }
-  say('importStatus','Đã phân tích '+seenPages.size+' trang, tìm thấy '+allResults.length+' link chương (chỉ gồm link được tìm thấy trực tiếp trên website). Bỏ qua '+skippedCount+' link đã có; còn '+result.length+' link mới. Ông có thể xem danh sách trước khi lấy nội dung.');
- }catch(e){
-  const message=e.message||'Không tìm thấy link chương.';
-  say('importStatus',message);
-  if(/xác minh|security verification|captcha|cloudflare|verify you are human|HTTP 401|HTTP 403|chặn truy cập tự động/i.test(message)){
-   $('discoverHelp').innerHTML='<a href="'+esc(url.href)+'" target="_blank" rel="noopener" style="display:inline-block;padding:10px 13px;border:1px solid #6b5635;border-radius:12px;color:#f4c477;text-decoration:none;font-weight:650">↗ Mở trang truyện gốc để xác minh trên Safari</a><div class="small" style="margin-top:7px">Mở trang gốc và làm theo yêu cầu của website nếu có. Sau đó quay lại app và thử Tìm link chương lần nữa. Phiên xác minh trên Safari không đảm bảo dịch vụ đọc trang tự động được cấp quyền. App không vượt bước bảo mật.</div>';
-   $('discoverHelp').classList.remove('hidden');
-  }
- }
- finally{$('discover').disabled=false}
-}
 $('exportCollected').onclick=()=>{
  const ready=imports.filter(x=>x.ok&&String(x.text||'').trim());
  const untranslated=ready.filter(x=>!x.translated);if($('autoTranslate').checked&&untranslated.length&&!confirm('Có '+untranslated.length+' chương chưa dịch. File TXT sẽ chứa cả nội dung chưa dịch. Vẫn xuất chứ?'))return;
  if(!ready.length){say('importStatus','Chưa có chương lấy thành công để xuất.');return}
- const title=(($('storyUrl').value.trim()&&(()=>{try{return new URL($('storyUrl').value.trim()).pathname.split('/').filter(Boolean).pop().replace(/[-_]+/g,' ')}catch{return ''}})())||ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
+ const title=(ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
  const body=ready.map((item,i)=>{
   const index=imports.indexOf(item);
   const t=document.querySelector('[data-title="'+index+'"]')?.value.trim()||item.title||('Chương '+(i+1));
@@ -619,7 +387,7 @@ $('saveImports').onclick=async()=>{
  const untranslated=ready.filter(x=>!x.translated);if($('autoTranslate').checked&&untranslated.length&&!confirm('Còn '+untranslated.length+' chương chưa dịch được. Nếu tiếp tục, các chương này sẽ được lưu bằng ngôn ngữ gốc. Ông có muốn tiếp tục không?'))return;
  let target=book();
  if(!target){
-  const rawName=$('storyUrl').value.trim();let guessed='';
+  const rawName=$('patternUrl').value.trim()||ready[0].url;let guessed='';
   try{guessed=new URL(rawName).pathname.split('/').filter(Boolean).pop()||''}catch(e){}
   const title=(guessed||ready[0].title||'Truyện mới').replace(/[-_]+/g,' ').replace(/\b(chương|chuong|chapter)\s*\d+.*$/i,'').trim()||'Truyện mới';
   target={id:uid(),title,chapters:[]};lib.push(target);bid=target.id;cid=''
@@ -719,7 +487,7 @@ $('resetAllData').onclick=async()=>{
   }
   await clearDraft();
   ['goc_nghe_truyen_library_v1','goc_nghe_truyen_history_v1','goc_nghe_truyen_speed_v2','goc_nghe_truyen_voice_v2','goc_nghe_truyen_translate_endpoint_v1'].forEach(k=>localStorage.removeItem(k));
-  $('storyUrl').value='';$('urls').value='';$('title').value='';$('story').value='';$('chapterNotes').value='';
+  $('patternUrl').value='';$('urls').value='';$('title').value='';$('story').value='';$('chapterNotes').value='';
   render();renderImports();showTab('importSection');
   say('libraryStatus','Đã xóa toàn bộ thư viện, bản nháp, lịch sử và cài đặt trên thiết bị này.');
   say('importStatus','Dữ liệu đã được đặt lại. App sẵn sàng như mới.');
