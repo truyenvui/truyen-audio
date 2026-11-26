@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "goc-nghe-truyen-v91";
+const CACHE_NAME = "goc-nghe-truyen-v92";
 const BASE = self.registration.scope;
 
 self.addEventListener("install", (event) => {
@@ -29,17 +29,16 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
-
-    await Promise.all(
-      keys
-        .filter((key) =>
-          key.startsWith("goc-nghe-truyen-") &&
-          key !== CACHE_NAME
-        )
-        .map((key) => caches.delete(key))
-    );
-
+    const cache = await caches.open(CACHE_NAME);
+    const hasAppShell = !!(await cache.match(BASE + "index.html") || await cache.match(BASE));
+    if (hasAppShell) {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith("goc-nghe-truyen-") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      );
+    }
     await self.clients.claim();
   })());
 });
@@ -60,8 +59,17 @@ self.addEventListener("fetch", (event) => {
       if (response.ok) {
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
+        return response;
       }
 
+      if (response.status >= 500) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === "navigate") {
+          const shell = await caches.match(BASE + "index.html") || await caches.match(BASE);
+          if (shell) return shell;
+        }
+      }
       return response;
     } catch (error) {
       const cached = await caches.match(request);
