@@ -435,8 +435,8 @@ $('exportCollected').onclick=()=>{
  const title=(ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
  const body=ready.map((item,i)=>{
   const index=imports.indexOf(item);
-  const t=document.querySelector('[data-title="'+index+'"]')?.value.trim()||item.title||('Chương '+(i+1));
-  const content=document.querySelector('[data-text="'+index+'"]')?.value??item.text;
+   const t=item.title||('Chương '+(i+1));
+   const content=item.text;
   return t+'\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\n\n'+String(content||'').trim();
  }).join('\n\n'+'-'.repeat(36)+'\n\n');
  downloadTxt(title,title+'\n'+'='.repeat(Math.min(60,Math.max(8,title.length)))+'\n\n'+body);
@@ -455,7 +455,7 @@ $('saveImports').onclick=async()=>{
  }
  let added=0,duplicates=0;
  for(const x of ready){
-  const index=imports.indexOf(x),ti=document.querySelector('[data-title="'+index+'"]'),tx=document.querySelector('[data-text="'+index+'"]');
+   const chapterTitle=x.title||'Chương chưa rõ tên',body=x.text||'';
   const chapterTitle=ti?.value.trim()||x.title,body=tx?.value??x.text;
   if(!body.trim())continue;
   if(isAlreadySaved(x.url,chapterTitle)){duplicates++;continue}
