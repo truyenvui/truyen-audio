@@ -57,7 +57,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <div class="actions"><button class="primary" id="discover" type="button">Tìm link chương từ danh sách</button></div>
 <p class="small">Dán link trang giới thiệu truyện. App tìm liên kết chương thật trong danh sách; không tự đoán mã URL. Với bộ truyện có mã URL bất thường, dùng khung Đọc trang kiểu OpenRead ở trên để lấy từng chương. Link đã lưu thành công sẽ được tự bỏ qua.</p>
 <details class="manual-links"><summary>Hoặc nhập link chương thủ công</summary>
-<textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
+<textarea id="urls" placeholder="Mỗi dòng một link chương. Có thể dán 900 link; mỗi lượt xử lý tối đa 200..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div>
 <label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt (tối đa 200)</label><select id="batchSize"><option value="25">25 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="150">150 chương</option><option value="200" selected>200 chương (một lượt)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
@@ -306,7 +306,8 @@ $('fetch').onclick=async()=>{
  const urls=[],seen=new Set();let invalid=0;
  for(const raw of rawUrls){try{const u=normalizeStoryUrl(raw);if(!seen.has(u)){seen.add(u);urls.push(u)}}catch(e){invalid++}}
  if(!urls.length){say('importStatus',invalid?'Có '+invalid+' link không hợp lệ. Hãy kiểm tra lại danh sách.':'Dán ít nhất một link chương nhé.');return}
- const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
+ const failedBefore=new Set(imports.filter(x=>!x.ok).map(x=>x.url));
+ const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u)).sort((a,b)=>Number(failedBefore.has(a))-Number(failedBefore.has(b)));
  skippedCount=urls.length-pendingAll.length;renderImports();
  const batchLimit=Math.max(1,Math.min(200,Number($('batchSize')?.value)||200));
  const pending=pendingAll.slice(0,batchLimit),total=urls.length,doneBefore=total-pendingAll.length;
