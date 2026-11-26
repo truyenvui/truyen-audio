@@ -60,7 +60,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 <textarea id="urls" placeholder="Mỗi dòng một link chương (tối đa 200 link)..." style="min-height:88px;margin-top:10px"></textarea>
 </details>
 <div class="actions"><button class="primary importmain" id="fetch">Lấy nội dung chương</button></div>
-<label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt</label><select id="batchSize"><option value="5" selected>5 chương (khuyên dùng)</option><option value="10">10 chương</option><option value="20">20 chương</option><option value="50">50 chương</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
+<label for="maxDiscoverPages">Số link chương cần tìm (tối đa 200 mỗi lượt)</label><input id="maxDiscoverPages" type="number" inputmode="numeric" min="1" max="200" value="200" placeholder="Ví dụ: 100"><label for="batchSize">Số chương xử lý trong một lượt (tối đa 200)</label><select id="batchSize"><option value="25">25 chương</option><option value="50">50 chương</option><option value="100">100 chương</option><option value="150">150 chương</option><option value="200" selected>200 chương (một lượt)</option></select><label style="display:flex;align-items:center;gap:9px;margin-top:12px"><input id="autoTranslate" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)"> Tự động dịch chương sang tiếng Việt sau khi lấy</label><div class="actions"><button id="translateImports">Dịch các chương đã lấy / dịch tiếp</button></div>
 <div class="status" id="importStatus" role="status" aria-live="polite"></div>
 <div class="import-progress"><progress id="importProgress" max="100" value="0"></progress><div class="small" id="progressLabel">Chưa bắt đầu thu thập</div></div>
 <div id="discoverHelp" class="manual-links hidden" aria-live="polite"></div>
@@ -82,7 +82,7 @@ label{display:block;font-size:13px;color:#d4d5d7;margin:12px 0 6px}input[type=te
 </section>
 
 <div class="desktopgrid">
-<section class="section" id="librarySection"><div class="sectionhead"><h2>📚 Thư viện</h2><button id="addBook">＋ Bộ truyện</button></div>
+<section class="section" id="librarySection"><div class="sectionhead"><h2>📚 Thư viện</h2><button id="addBook">＋ Bộ truyện</button></div><div class="small" id="libraryCount" style="margin:-5px 0 12px">Thư viện đang tải…</div>
 <div class="selectrow"><div><label for="books">Bộ truyện đang chọn</label><select id="books"></select></div><button id="renameBook">Đổi tên</button></div>
 <div class="actions"><button id="addChapter">＋ Chương mới</button><button id="renameChapter">Đổi tên chương</button><button class="danger" id="deleteChapter">Xóa chương</button></div>
 <label for="chapters">Danh sách chương</label><select id="chapters"></select>
@@ -201,7 +201,7 @@ function makeChunks(t){t=cleanSpeech(t);const parts=t.match(/[^.!?。！？\n]+[
 function fmt(n){n=Math.max(0,Math.floor(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),sec=n%60;return h?String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'):String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
 function renderHistory(){const el=$('historyList');if(!el)return;el.innerHTML=history.length?history.map(x=>'<div class="result"><strong>'+esc(x.title)+'</strong><span class="muted">'+esc(x.book)+' · '+new Date(x.at).toLocaleString('vi-VN')+'</span><div class="actions"><button data-history="'+esc(x.id)+'">Nghe tiếp</button></div></div>').join(''):'Chưa có lịch sử.';el.querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>{for(const bk of lib){const ch=bk.chapters.find(c=>c.id===b.dataset.history);if(ch){bid=bk.id;cid=ch.id;showTab('playerSection');render();$('play').click();break}}})}
 function renderPlaylist(){const el=$('playlist');if(!el)return;const list=book()?.chapters||[];el.innerHTML='<div class="playlisthead"><strong>☷ Danh sách phát</strong><span>'+list.length+' chương</span></div>'+(list.length?list.map((c,i)=>'<div class="playlistitem '+(c.id===cid?'active':'')+'"><div class="playlistnum">'+(c.id===cid&&playing&&!paused?'♫':(i+1))+'</div><div class="playlistmeta"><b>'+esc(c.title||('Chương '+(i+1)))+'</b><small>'+(c.id===cid?(playing&&!paused?'Đang phát':paused?'Đang tạm dừng':'Đang chọn'):(String(c.text||'').trim()?'Sẵn sàng phát':'Chưa có nội dung'))+'</small></div><button class="playlistplay" data-play-chapter="'+esc(c.id)+'" aria-label="Phát '+esc(c.title||('Chương '+(i+1)))+'">'+(c.id===cid&&playing&&!paused?'Ⅱ':'▶')+'</button></div>').join(''):'<div class="small">Bộ truyện này chưa có chương nào.</div>');el.querySelectorAll('[data-play-chapter]').forEach(btn=>btn.onclick=()=>{const target=btn.dataset.playChapter;if(target===cid&&playing&&!paused){$('play').click();return}stop('Đang mở chương đã chọn…');cid=target;const selected=chapter();pos=0;if(selected)selected.pos=0;render();showTab('playerSection');if(selected&&String(selected.text||'').trim())$('play').click();else say('playStatus','Chương này chưa có nội dung. Thêm nội dung rồi thử lại nhé.')})}
-function render(){const bs=$('books');bs.replaceChildren(new Option(lib.length?'Chọn bộ truyện':'Chưa có bộ truyện',''));lib.forEach(b=>bs.add(new Option(b.title,b.id)));bs.value=bid;const cs=$('chapters');cs.replaceChildren(new Option(book()?.chapters.length?'Chọn chương':'Chưa có chương',''));book()?.chapters.forEach(c=>cs.add(new Option(c.title,c.id)));cs.value=cid;const c=chapter();$('title').value=c?.title||'';$('story').value=c?.text||'';$('chapterNotes').value=c?.notes||'';chunks=makeChunks($('story').value);pos=Math.min(c?.pos||0,Math.max(0,chunks.length-1));updatePlayer();renderPlaylist()}
+function render(){const bs=$('books');bs.replaceChildren(new Option(lib.length?'Chọn bộ truyện':'Chưa có bộ truyện',''));lib.forEach(b=>bs.add(new Option(b.title,b.id)));bs.value=bid;const cs=$('chapters');cs.replaceChildren(new Option(book()?.chapters.length?'Chọn chương':'Chưa có chương',''));book()?.chapters.forEach(c=>cs.add(new Option(c.title,c.id)));cs.value=cid;const c=chapter();$('title').value=c?.title||'';$('story').value=c?.text||'';$('chapterNotes').value=c?.notes||'';chunks=makeChunks($('story').value);pos=Math.min(c?.pos||0,Math.max(0,chunks.length-1));const total=lib.reduce((n,b)=>n+(b.chapters||[]).length,0);if($('libraryCount'))$('libraryCount').textContent=lib.length+' bộ truyện · '+total.toLocaleString('vi-VN')+' chương. Không đặt giới hạn 1.000 chương; dung lượng thực tế phụ thuộc bộ nhớ Safari/iPhone.';updatePlayer();renderPlaylist()}
 function chunkDuration(text){const rate=Math.max(.6,Math.min(2,+$('speed').value||1));const chars=Array.from(String(text||'')).length;const pauses=(String(text).match(/[,.!?;:，。！？；：]/g)||[]).length*.2;return Math.max(.8,chars/(5.2*rate)+pauses)}
 function chapterDuration(){return chunks.reduce((sum,text)=>sum+chunkDuration(text),0)}
 function currentElapsed(){let total=0;for(let i=0;i<Math.min(pos,chunks.length);i++)total+=chunkDuration(chunks[i]);if(pos<chunks.length)total+=Math.min(chunkDuration(chunks[pos]),chunkElapsed+(playing&&!paused&&chunkStartedAt?(Date.now()-chunkStartedAt)/1000:0));return total}
@@ -303,35 +303,45 @@ $('quickRead').onclick=async()=>{
 };
 $('fetch').onclick=async()=>{
  const rawUrls=$('urls').value.split(/[\s,]+/).map(s=>s.trim()).filter(Boolean);
- const urls=[...new Set(rawUrls)].slice(0,200);
- if(!urls.length){say('importStatus','Dán ít nhất một link chương nhé.');return}
+ const urls=[],seen=new Set();let invalid=0;
+ for(const raw of rawUrls){try{const u=normalizeStoryUrl(raw);if(!seen.has(u)){seen.add(u);urls.push(u)}}catch(e){invalid++}}
+ if(!urls.length){say('importStatus',invalid?'Có '+invalid+' link không hợp lệ. Hãy kiểm tra lại danh sách.':'Dán ít nhất một link chương nhé.');return}
  const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
  skippedCount=urls.length-pendingAll.length;renderImports();
- const batchLimit=Math.max(1,Math.min(200,Number($('batchSize')?.value)||100));
- const pending=pendingAll.slice(0,batchLimit);
- const total=urls.length,doneBefore=total-pendingAll.length;
- $('importProgress').max=total;$('importProgress').value=doneBefore;
- say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
+ const batchLimit=Math.max(1,Math.min(200,Number($('batchSize')?.value)||200));
+ const pending=pendingAll.slice(0,batchLimit),total=urls.length,doneBefore=total-pendingAll.length;
+ $('importProgress').max=total;$('importProgress').value=doneBefore;say('progressLabel',doneBefore+'/'+total+' link đã xử lý hoặc bỏ qua');
  if(!pending.length){say('importStatus','Đã tự bỏ qua '+skippedCount+' link đã có trong thư viện hoặc bản nháp thành công. Không còn chương mới trong lượt này.');return}
- $('fetch').disabled=true;$('saveImports').disabled=true;let saved=0;
- try{
-  for(let i=0;i<pending.length;i++){
-   say('waitCount',pending.length-i);
-   say('importStatus','Đang thu thập chương '+(i+1)+'/'+pending.length+' trong lượt tối đa '+batchLimit+' chương. Bản nháp được lưu sau từng chương.');
+ $('fetch').disabled=true;$('saveImports').disabled=true;
+ let saved=0,failed=0,completed=0,stopWorkers=false,draftFailed=false;
+ const results=new Array(pending.length),batchSet=new Set(pending);let cursor=0;
+ const concurrency=Math.min(2,pending.length);say('waitCount',concurrency);
+ async function worker(){
+  while(!stopWorkers){
+   const i=cursor++;if(i>=pending.length)break;
+   say('importStatus','Đang lấy '+(i+1)+'/'+pending.length+' · tối đa '+concurrency+' luồng song song. Mỗi chương được lưu bản nháp ngay khi xong.');
    let item;
-   try{item=await readUrl(pending[i]);if($('autoTranslate').checked){item.originalText=item.text;try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}}}
-   catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
-   imports.push(item);
-   try{await writeDraft();saved++}
-   catch(e){say('importStatus','Không lưu được bản nháp tự động. Đã dừng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');renderImports();break}
-   $('importProgress').value=Math.min(total,doneBefore+i+1);
-   say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
-   renderImports();if(i<pending.length-1)await sleep(450)
+   try{
+    item=await readUrl(pending[i]);
+    if($('autoTranslate').checked){item.originalText=item.text;try{item.text=await translateLongText(item.originalText);item.translated=true;item.translationError=''}catch(te){item.translated=false;item.translationError=te.message||'Dịch thất bại';item.text=item.originalText}}
+   }catch(e){item={url:pending[i],title:pending[i],text:'',ok:false,error:e.message||'Không lấy được nội dung'}}
+   results[i]=item;imports.push(item);
+   try{await writeDraft();saved++}catch(e){draftFailed=true;stopWorkers=true;say('importStatus','Không lưu được bản nháp tự động. Đã dừng các luồng để tránh mất thêm dữ liệu; đừng đóng trang lúc này.');break}
+   completed++;if(!item.ok)failed++;
+   $('importProgress').value=Math.min(total,doneBefore+completed);say('progressLabel',$('importProgress').value+'/'+total+' link đã xử lý hoặc bỏ qua');
+   if(completed%5===0||completed===pending.length)renderImports();
+   if(completed%2===0)await sleep(300);
   }
+ }
+ try{
+  await Promise.all(Array.from({length:concurrency},()=>worker()));
+  const ordered=results.filter(Boolean);imports=imports.filter(x=>!batchSet.has(x.url)).concat(ordered);
+  try{await writeDraft()}catch(e){draftFailed=true}
+  renderImports();
  }finally{
   $('fetch').disabled=false;say('waitCount',0);
-  const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u));
-  say('importStatus','Đã xử lý thêm '+saved+' link. Có '+imports.filter(x=>x.ok).length+' chương lấy thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương đã có. '+(remaining.length?'Còn '+remaining.length+' link mới hoặc bị lỗi. Bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':'Đã hết link mới trong danh sách.'));
+  const remaining=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u)),note=invalid?' Có '+invalid+' link không hợp lệ đã bỏ qua.':'';
+  say('importStatus',draftFailed?'Bản nháp có thể chưa lưu đủ. Đã dừng an toàn; hãy giữ trang mở và thử lại sau.':'Đã xử lý '+completed+'/'+pending.length+' link trong lượt này: '+saved+' lượt lưu bản nháp, '+failed+' link lỗi. Có '+imports.filter(x=>x.ok).length+' chương thành công trong bản nháp; tự bỏ qua '+skippedCount+' chương trùng.'+(remaining.length?' Còn '+remaining.length+' link mới hoặc bị lỗi; bấm Lấy nội dung chương lần nữa để tiếp tục/thử lại.':' Đã hết link mới trong danh sách.')+note);
  }
 }
 if($('makePatternLinks'))$('makePatternLinks').onclick=()=>{
