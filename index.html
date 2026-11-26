@@ -434,7 +434,6 @@ $('exportCollected').onclick=()=>{
  if(!ready.length){say('importStatus','Chưa có chương lấy thành công để xuất.');return}
  const title=(ready[0].title||'Truyện đã gom').replace(/\s+/g,' ').trim();
  const body=ready.map((item,i)=>{
-  const index=imports.indexOf(item);
    const t=item.title||('Chương '+(i+1));
    const content=item.text;
   return t+'\n'+'='.repeat(Math.min(60,Math.max(8,t.length)))+'\n\n'+String(content||'').trim();
@@ -456,7 +455,6 @@ $('saveImports').onclick=async()=>{
  let added=0,duplicates=0;
  for(const x of ready){
    const chapterTitle=x.title||'Chương chưa rõ tên',body=x.text||'';
-  const chapterTitle=ti?.value.trim()||x.title,body=tx?.value??x.text;
   if(!body.trim())continue;
   if(isAlreadySaved(x.url,chapterTitle)){duplicates++;continue}
   target.chapters.push({id:uid(),title:chapterTitle,text:body,originalText:x.originalText||null,translated:!!x.translated,pos:0,sourceUrl:x.url});added++;
