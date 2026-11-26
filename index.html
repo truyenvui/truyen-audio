@@ -285,7 +285,7 @@ $('fetch').onclick=async()=>{
  for(const raw of rawUrls){try{const u=normalizeStoryUrl(raw),key=uniqueChapterKey(u);if(!seen.has(u)&&!seenChapters.has(key)){seen.add(u);seenChapters.add(key);urls.push(u)}}catch(e){invalid++}}
  if(!urls.length){say('importStatus',invalid?'Có '+invalid+' link không hợp lệ. Hãy kiểm tra lại danh sách.':'Dán ít nhất một link chương nhé.');return}
  const failedBefore=new Set(imports.filter(x=>!x.ok).map(x=>x.url));
- const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u)).sort((a,b)=>Number(failedBefore.has(a))-Number(failedBefore.has(b)));
+ const pendingAll=urls.filter(u=>!isAlreadySaved(u)&&!isAlreadyImported(u)).sort((a,b)=>Number(failedBefore.has(b))-Number(failedBefore.has(a)));
  skippedCount=urls.length-pendingAll.length;renderImports();
  const batchLimit=Math.max(1,Math.min(200,Number($('batchSize')?.value)||200));
  const pending=pendingAll.slice(0,batchLimit),total=urls.length,doneBefore=total-pendingAll.length;
